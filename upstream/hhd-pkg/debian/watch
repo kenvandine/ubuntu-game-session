@@ -1,0 +1,4 @@
+version=4
+# Tracks new upstream releases from PyPI
+opts=filenamemangle=s/.+\/v?(\d\S*)\.tar\.gz/hhd-$1\.tar\.gz/ \
+  https://pypi.debian.net/hhd/hhd-(.+)\.tar\.gz

@@ -1,0 +1,11 @@
+#!/bin/bash
+# steamos-session-select - Called by Steam when user clicks "Switch to Desktop"
+# Installed by ubuntu-handheld package to /usr/bin/steamos-session-select
+
+# Sets AccountsService session to ubuntu, then terminates the Gamescope session.
+# GDM auto-login will log back in to the ubuntu desktop.
+busctl call org.freedesktop.Accounts "/org/freedesktop/Accounts/User$(id -u)" \
+    org.freedesktop.Accounts.User SetXSession s "ubuntu"
+busctl call org.freedesktop.Accounts "/org/freedesktop/Accounts/User$(id -u)" \
+    org.freedesktop.Accounts.User SetSession s "ubuntu"
+loginctl terminate-session "$XDG_SESSION_ID"

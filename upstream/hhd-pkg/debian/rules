@@ -1,0 +1,24 @@
+#!/usr/bin/make -f
+# debian/rules for hhd
+# Uses pybuild (the standard Python Debian build helper)
+
+export DH_VERBOSE = 1
+export PYBUILD_NAME = hhd
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild
+
+# Install the udev rules and systemd service into the 'hhd' binary package
+# (not into python3-hhd which is library-only)
+override_dh_install:
+	dh_install
+	# udev rules
+	install -Dm644 usr/lib/udev/rules.d/83-hhd.rules \
+		debian/hhd/usr/lib/udev/rules.d/83-hhd.rules
+	install -Dm644 usr/lib/udev/rules.d/83-hhd-user.rules \
+		debian/hhd/usr/lib/udev/rules.d/83-hhd-user.rules
+	install -Dm644 usr/lib/udev/rules.d/99-hhd-playstation-touchpad.rules \
+		debian/hhd/usr/lib/udev/rules.d/99-hhd-playstation-touchpad.rules
+	# systemd template unit
+	install -Dm644 usr/lib/systemd/system/hhd@.service \
+		debian/hhd/usr/lib/systemd/system/hhd@.service

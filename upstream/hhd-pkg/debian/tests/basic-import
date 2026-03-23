@@ -1,0 +1,5 @@
+#!/bin/sh
+# autopkgtest: basic-import
+# Verifies the python3-hhd package imports correctly
+set -e
+python3 -c "import hhd; print('hhd import OK, version:', hhd.__version__)"

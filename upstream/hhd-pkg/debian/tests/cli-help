@@ -1,0 +1,5 @@
+#!/bin/sh
+# autopkgtest: cli-help
+# Verifies the hhd CLI entry point is installed and responds to --help
+set -e
+hhd --help

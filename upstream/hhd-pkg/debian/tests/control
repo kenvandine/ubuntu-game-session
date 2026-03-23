@@ -1,0 +1,3 @@
+Tests: basic-import, cli-help
+Depends: python3-hhd, python3
+Restrictions: allow-stderr

@@ -1,0 +1,58 @@
+Source: hhd
+Section: python
+Priority: optional
+Maintainer: Ubuntu MOTU Developers <ubuntu-motu@lists.ubuntu.com>
+Uploaders: Your Name <your.email@example.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-python,
+ python3-all,
+ python3-setuptools,
+ python3-evdev,
+ python3-yaml,
+ python3-rich,
+ python3-xlib,
+Standards-Version: 4.7.0
+Homepage: https://github.com/hhd-dev/hhd
+Vcs-Git: https://salsa.debian.org/python-team/packages/hhd.git
+Vcs-Browser: https://salsa.debian.org/python-team/packages/hhd
+Rules-Requires-Root: no
+Testsuite: autopkgtest-pkg-python
+
+Package: python3-hhd
+Architecture: all
+Depends:
+ ${python3:Depends},
+ ${misc:Depends},
+ python3-evdev (>= 1.6.1),
+ python3-yaml (>= 6.0.1),
+ python3-rich (>= 13.5.2),
+ python3-xlib (>= 0.33),
+ python3-setuptools,
+Recommends:
+ hhd,
+Description: Handheld Daemon Python library
+ HHD (Handheld Daemon) provides a unified interface for handheld device
+ hardware features on Linux, including:
+  - TDP (Thermal Design Power) control
+  - Controller remapping and emulation (DualSense, Xbox)
+  - Fan curve management
+  - Battery charge limit control
+  - RGB LED control
+ .
+ This package installs the Python 3 library.
+
+Package: hhd
+Architecture: all
+Depends:
+ ${python3:Depends},
+ ${misc:Depends},
+ python3-hhd (= ${binary:Version}),
+ udev,
+Description: Handheld Daemon system service
+ HHD (Handheld Daemon) provides a unified interface for handheld device
+ hardware features on Linux. This package installs the systemd service
+ and udev rules required to run HHD as a system daemon.
+ .
+ Supported devices include: Lenovo Legion Go, ASUS ROG Ally, Steam Deck,
+ and many other handheld gaming PCs.

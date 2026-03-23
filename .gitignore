@@ -1,0 +1,13 @@
+# Built .deb packages
+*.deb
+
+# Stray SSH connection artefacts
+legion@*
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Editor
+.vscode/
+*.swp

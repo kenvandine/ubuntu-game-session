@@ -1,0 +1,7 @@
+hhd (4.1.8-1) unstable; urgency=medium
+
+  * Initial Debian packaging for Ubuntu universe submission.
+  * Split into python3-hhd (library) and hhd (daemon + udev rules).
+  * Added autopkgtest for basic import and CLI invocation.
+
+ -- Your Name <your.email@example.com>  Mon, 23 Mar 2026 21:00:00 +0000
