@@ -31,9 +31,18 @@ configure)
     # ---- Install Official Steam from the Valve APT repo -----------------------
     # The repo config is shipped as a package payload in /etc/apt/sources.list.d/steam.list
     # and the GPG key was added in preinst. apt-get handles it like any other package.
+    # However, because we are currently inside a `dpkg` installation lock, we cannot
+    # synchronously invoke `apt-get install`. We use a transient systemd task to wait and install.
     if ! dpkg -l steam-launcher 2>/dev/null | grep -q '^ii'; then
-        echo "ubuntu-handheld: installing steam-launcher from Valve APT repo..."
-        apt-get install -y steam-launcher
+        echo "ubuntu-handheld: queueing asynchronous installation of steam-launcher..."
+        systemd-run --unit=ubuntu-handheld-steam-installer bash -c '
+            echo "Waiting for dpkg locks to release..."
+            while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/dpkg/lock >/dev/null 2>&1; do
+                sleep 2
+            done
+            echo "Locks released. Installing steam-launcher..."
+            apt-get install -y steam-launcher
+        '
     fi
 
     # ---- GDM: automatic & timed login --------------------------------------------
@@ -127,16 +136,16 @@ HHDEOF
     fi
 
     # Wrapper to bypass AppArmor namespace restrictions
-    cat > /usr/local/bin/hhd-ui << 'UIEOF'
+    cat > /usr/bin/hhd-ui << 'UIEOF'
 #!/bin/bash
 exec /opt/hhd/hhd-ui.AppImage --no-sandbox "$@"
 UIEOF
-    chmod +x /usr/local/bin/hhd-ui
+    chmod +x /usr/bin/hhd-ui
 
     # Symlinks so system can find the binaries naturally
-    ln -sf /opt/hhd/venv/bin/hhd /usr/local/bin/hhd
+    ln -sf /opt/hhd/venv/bin/hhd /usr/bin/hhd
     [ -f /opt/hhd/venv/bin/hhd-overlay ] && \
-        ln -sf /opt/hhd/venv/bin/hhd-overlay /usr/local/bin/hhd-overlay
+        ln -sf /opt/hhd/venv/bin/hhd-overlay /usr/bin/hhd-overlay
 
     # ---- udev rules for controllers ---------------------------------------------
     mkdir -p /etc/udev/rules.d/

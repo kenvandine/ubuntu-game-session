@@ -1,8 +1,12 @@
-Package: ubuntu-handheld
-Version: 1.0
+Source: ubuntu-handheld
 Section: misc
 Priority: optional
-Architecture: amd64
+Maintainer: ubuntu-handheld contributors <ubuntu-handheld@localhost>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+
+Package: ubuntu-handheld
+Architecture: all
 Depends: gamescope,
          sxhkd,
          acpi-call-dkms,
@@ -16,11 +20,7 @@ Depends: gamescope,
          libfuse2t64,
          libhidapi-hidraw0,
          udev,
-         libc6:i386,
-         libgl1:i386,
-         libgl1-mesa-dri:i386,
-         libglx0:i386
-Maintainer: ubuntu-handheld contributors
+         ${misc:Depends}
 Description: Handheld Ubuntu Setup (SteamOS-like experience)
  Transforms an Ubuntu installation into a console-like handheld gaming
  experience. Installs and configures:

@@ -10,8 +10,8 @@ Two things live here: a **ready-to-install `.deb` package** for end users, and *
 ### Installing via the `.deb` package (recommended)
 
 ```bash
-bash build.sh                                      # builds ubuntu-handheld_1.0_amd64.deb
-sudo apt install ./ubuntu-handheld_1.0_amd64.deb   # installs everything
+bash build.sh                                      # builds ../ubuntu-handheld_1.0-1_all.deb
+sudo apt install ../ubuntu-handheld_1.0-1_all.deb  # installs everything
 ```
 
 Reboot. The system boots directly into the Steam Gamepad UI.
@@ -21,7 +21,7 @@ Reboot. The system boots directly into the Steam Gamepad UI.
 For development or machines without `apt`:
 
 ```bash
-sudo ./ubuntu-handheld-setup.sh
+sudo scripts/ubuntu-handheld-setup.sh
 ```
 
 Reboot after the script completes.
@@ -67,7 +67,7 @@ bash build.sh
 
 ```bash
 sudo snap install multipass
-./test-in-vm.sh
+scripts/test-in-vm.sh
 ```
 
 Spins up a fresh Ubuntu 25.10 container and runs the setup script through a suite of edge-case tests.
@@ -108,32 +108,33 @@ The `upstream/hhd-pkg/` directory contains a complete Debian source package for 
 
 ```
 .
-├── ubuntu-handheld-setup.sh        # standalone setup script
-├── build.sh                        # builds the .deb
-├── test-in-vm.sh                   # VM integration test
-├── ubuntu-handheld_1.0_amd64.deb  # built package (gitignored)
-├── deb/
-│   ├── DEBIAN/
-│   │   ├── control                 # package metadata + deps
-│   │   ├── preinst                 # adds Valve APT repo + GPG key
-│   │   ├── postinst                # configures GDM, polkit, HHD, services
-│   │   └── postrm                  # full revert on remove/purge
+├── scripts/
+│   ├── ubuntu-handheld-setup.sh    # standalone setup script
+│   └── test-in-vm.sh               # VM integration test
+├── src/                            # static payloads shipped in the .deb
 │   ├── etc/apt/sources.list.d/
-│   │   └── steam.list              # Valve Steam APT source
-│   └── usr/
-│       ├── bin/steamos-session-select
-│       ├── local/bin/steamos-session
-│       └── share/wayland-sessions/steamos.desktop
+│   │   └── steam.list
+│   ├── usr/bin/steamos-session-select
+│   ├── usr/bin/steamos-session
+│   └── usr/share/wayland-sessions/steamos.desktop
+├── debian/                         # MOTU-standard Debian package source files
+│   ├── control                     # package metadata + deps
+│   ├── rules                       # debhelper build rules
+│   ├── ubuntu-handheld.install     # maps src/ contents into the package
+│   ├── preinst                     # adds Valve APT repo + GPG key
+│   ├── postinst                    # configures GDM, polkit, HHD, services
+│   └── postrm                      # full revert on remove/purge
+├── build.sh                        # wrapper to run dpkg-buildpackage
 └── upstream/
     └── hhd-pkg/
-        └── debian/                 # MOTU packaging for Ubuntu universe
+        └── debian/                 # MOTU packaging for upstream hhd
 ```
 
 ### Key system files (installed)
 
 | Path | Purpose |
 |---|---|
-| `/usr/local/bin/steamos-session` | Gamescope + Steam launcher wrapper |
+| `/usr/bin/steamos-session` | Gamescope + Steam launcher wrapper |
 | `/usr/bin/steamos-session-select` | Steam "Switch to Desktop" hook |
 | `/usr/share/wayland-sessions/steamos.desktop` | GDM session entry |
 | `/etc/systemd/system/steamos-autologin-reset.service` | Resets session to SteamOS on every boot |

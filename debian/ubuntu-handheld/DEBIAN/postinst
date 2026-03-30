@@ -1,0 +1,213 @@
+#!/bin/bash
+# postinst - Runs as root after dpkg -i installs the ubuntu-handheld package
+set -e
+
+STATE_DIR=/var/lib/ubuntu-handheld
+
+case "$1" in
+configure)
+    # ---- Detect the primary non-root user ----------------------------------------
+    TARGET_USER=${SUDO_USER:-$(logname 2>/dev/null || echo "")}
+    if [ -z "$TARGET_USER" ] || [ "$TARGET_USER" = "root" ]; then
+        TARGET_USER=$(id -un 1000 2>/dev/null)
+    fi
+    if [ -z "$TARGET_USER" ]; then
+        echo "ERROR: ubuntu-handheld: could not detect the primary user. Aborting." >&2
+        exit 1
+    fi
+    USER_UID=$(id -u "$TARGET_USER")
+    USER_HOME=$(eval echo ~"$TARGET_USER")
+    echo "ubuntu-handheld: configuring for user '$TARGET_USER' (uid ${USER_UID})"
+
+    # ---- Save originals for clean revert -----------------------------------------
+    mkdir -p "$STATE_DIR"
+    echo "$TARGET_USER" > "$STATE_DIR/target_user"
+    echo "$USER_UID"    > "$STATE_DIR/target_uid"
+
+    if [ ! -f "$STATE_DIR/gdm3-custom.conf.orig" ]; then
+        cp /etc/gdm3/custom.conf "$STATE_DIR/gdm3-custom.conf.orig"
+    fi
+
+    # ---- Install Official Steam from the Valve APT repo -----------------------
+    # The repo config is shipped as a package payload in /etc/apt/sources.list.d/steam.list
+    # and the GPG key was added in preinst. apt-get handles it like any other package.
+    # However, because we are currently inside a `dpkg` installation lock, we cannot
+    # synchronously invoke `apt-get install`. We use a transient systemd task to wait and install.
+    if ! dpkg -l steam-launcher 2>/dev/null | grep -q '^ii'; then
+        echo "ubuntu-handheld: queueing asynchronous installation of steam-launcher..."
+        systemd-run --unit=ubuntu-handheld-steam-installer bash -c '
+            echo "Waiting for dpkg locks to release..."
+            while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/dpkg/lock >/dev/null 2>&1; do
+                sleep 2
+            done
+            echo "Locks released. Installing steam-launcher..."
+            apt-get install -y steam-launcher
+        '
+    fi
+
+    # ---- GDM: automatic & timed login --------------------------------------------
+    tee /etc/gdm3/custom.conf > /dev/null << GDMEOF
+# GDM configuration storage
+# Managed by ubuntu-handheld package -- remove package to revert
+[daemon]
+AutomaticLoginEnable=True
+AutomaticLogin=${TARGET_USER}
+TimedLoginEnable=True
+TimedLogin=${TARGET_USER}
+TimedLoginDelay=3
+
+[security]
+
+[xdmcp]
+
+[chooser]
+
+[debug]
+GDMEOF
+
+    # ---- Polkit: allow user to restart gdm3 without password --------------------
+    mkdir -p /etc/polkit-1/rules.d
+    cat > /etc/polkit-1/rules.d/50-gdm-restart.rules << POLKITEOF
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.systemd1.manage-units" &&
+        (action.lookup("unit") == "gdm3.service" || action.lookup("unit") == "gdm.service") &&
+        action.lookup("verb") == "restart" &&
+        subject.user == "${TARGET_USER}") {
+        return polkit.Result.YES;
+    }
+});
+POLKITEOF
+
+    # ---- Sudoers: legacy fallback for systemctl restart -------------------------
+    printf '%s ALL=(ALL) NOPASSWD: /bin/systemctl restart gdm3, /bin/systemctl restart gdm\n' \
+        "${TARGET_USER}" > /etc/sudoers.d/steamos-desktop-switch
+    chmod 0440 /etc/sudoers.d/steamos-desktop-switch
+
+    # ---- Systemd: boot session reset service ------------------------------------
+    cat > /etc/systemd/system/steamos-autologin-reset.service << SVCEOF
+[Unit]
+Description=Reset Default Session to SteamOS on Boot
+After=accounts-daemon.service
+Before=gdm.service gdm3.service display-manager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User${USER_UID} org.freedesktop.Accounts.User SetXSession s steamos
+ExecStart=/usr/bin/busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User${USER_UID} org.freedesktop.Accounts.User SetSession s steamos
+
+[Install]
+WantedBy=multi-user.target
+SVCEOF
+    systemctl daemon-reload
+    systemctl enable steamos-autologin-reset.service
+
+    # ---- Systemd: HHD service ---------------------------------------------------
+    cat > /etc/systemd/system/hhd@.service << HHDEOF
+[Unit]
+Description=Handheld Daemon (HHD) for %I
+After=network.target network-online.target
+Requires=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/opt/hhd/venv/bin/hhd --user %I
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+HHDEOF
+
+    # ---- HHD: install via pip in isolated venv ----------------------------------
+    mkdir -p /opt/hhd
+    if [ ! -d /opt/hhd/venv ]; then
+        python3 -m venv --system-site-packages /opt/hhd/venv
+    fi
+    /opt/hhd/venv/bin/pip install --quiet --upgrade pip
+    /opt/hhd/venv/bin/pip install --quiet --ignore-installed fasteners python-gettext
+    /opt/hhd/venv/bin/pip install --quiet --upgrade hhd
+
+    # ---- HHD-UI: download AppImage ----------------------------------------------
+    if [ ! -f /opt/hhd/hhd-ui.AppImage ]; then
+        curl -sL \
+            https://github.com/hhd-dev/hhd-ui/releases/latest/download/hhd-ui.AppImage \
+            -o /opt/hhd/hhd-ui.AppImage
+        chmod +x /opt/hhd/hhd-ui.AppImage
+    fi
+
+    # Wrapper to bypass AppArmor namespace restrictions
+    cat > /usr/bin/hhd-ui << 'UIEOF'
+#!/bin/bash
+exec /opt/hhd/hhd-ui.AppImage --no-sandbox "$@"
+UIEOF
+    chmod +x /usr/bin/hhd-ui
+
+    # Symlinks so system can find the binaries naturally
+    ln -sf /opt/hhd/venv/bin/hhd /usr/bin/hhd
+    [ -f /opt/hhd/venv/bin/hhd-overlay ] && \
+        ln -sf /opt/hhd/venv/bin/hhd-overlay /usr/bin/hhd-overlay
+
+    # ---- udev rules for controllers ---------------------------------------------
+    mkdir -p /etc/udev/rules.d/
+    UDEV_BASE=https://raw.githubusercontent.com/hhd-dev/hhd/master/usr/lib/udev/rules.d
+    curl -sL "$UDEV_BASE/83-hhd-user.rules"               -o /etc/udev/rules.d/83-hhd-user.rules
+    curl -sL "$UDEV_BASE/83-hhd.rules"                    -o /etc/udev/rules.d/83-hhd.rules
+    curl -sL "$UDEV_BASE/99-hhd-playstation-touchpad.rules" -o /etc/udev/rules.d/99-hhd-playstation-touchpad.rules
+    udevadm control --reload-rules && udevadm trigger
+
+    mkdir -p /etc/hhd
+    chmod a+rw /etc/hhd
+
+    # ---- Enable HHD for the primary user ----------------------------------------
+    usermod -aG input,video "$TARGET_USER" || true
+    systemctl daemon-reload
+    systemctl enable "hhd@${TARGET_USER}.service"
+    systemctl restart "hhd@${TARGET_USER}.service" || \
+        echo "ubuntu-handheld: HHD could not start (normal in VM or without handheld device)"
+
+    # ---- Set AccountsService session to steamos right now -----------------------
+    busctl call org.freedesktop.Accounts \
+        "/org/freedesktop/Accounts/User${USER_UID}" \
+        org.freedesktop.Accounts.User SetXSession s steamos 2>/dev/null || true
+    busctl call org.freedesktop.Accounts \
+        "/org/freedesktop/Accounts/User${USER_UID}" \
+        org.freedesktop.Accounts.User SetSession s steamos 2>/dev/null || true
+
+    # ---- Desktop shortcut: Return to Gaming Mode --------------------------------
+    mkdir -p "$USER_HOME/Desktop"
+    cat > "$USER_HOME/Desktop/Return to Gaming Mode.desktop" << DESKEOF
+[Desktop Entry]
+Name=Return to Gaming Mode
+Comment=Switch back to Steam Gamepad UI
+Exec=bash -c 'MY_UID=\$(id -u); busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User\${MY_UID} org.freedesktop.Accounts.User SetXSession s steamos && busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User\${MY_UID} org.freedesktop.Accounts.User SetSession s steamos && sleep 1 && systemctl restart gdm3 2>/dev/null || systemctl restart gdm'
+Icon=steam
+Type=Application
+Terminal=false
+DESKEOF
+    chmod +x "$USER_HOME/Desktop/Return to Gaming Mode.desktop"
+    chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/Desktop/Return to Gaming Mode.desktop"
+
+    # Mark shortcut as trusted so GNOME allows launching it
+    su - "$TARGET_USER" -c \
+        "gio set \"$USER_HOME/Desktop/Return to Gaming Mode.desktop\" metadata::trusted true" \
+        2>/dev/null || true
+
+    # ---- Enable native GNOME on-screen keyboard ---------------------------------
+    su - "$TARGET_USER" -c \
+        "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/${USER_UID}/bus \
+         gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true" \
+        2>/dev/null || true
+
+    echo "ubuntu-handheld: installation complete. Please reboot to boot into SteamOS."
+    ;;
+
+abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+*)
+    echo "postinst called with unknown argument: '$1'" >&2
+    exit 1
+    ;;
+esac
+
+exit 0

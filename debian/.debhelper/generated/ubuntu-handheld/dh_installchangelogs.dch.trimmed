@@ -1,0 +1,5 @@
+ubuntu-handheld (1.0-1) unstable; urgency=medium
+
+  * Initial Debian package restructuring.
+
+ -- ubuntu-handheld contributors <ubuntu-handheld@localhost>  Sat, 28 Mar 2026 00:00:00 +0000

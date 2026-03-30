@@ -77,7 +77,7 @@ rm /tmp/steam.deb
 
 echo "[2/4] Setting up Gamescope Steam Session..."
 # Create the launcher script
-cat << 'EOF' > /usr/local/bin/steamos-session
+cat << 'EOF' > /usr/bin/steamos-session
 #!/bin/bash
 # A basic gamescope session wrapper
 
@@ -118,7 +118,7 @@ else
     exec gamescope -e -f -- bash -c "sxhkd -c \"\$HOME/.config/sxhkd/sxhkdrc\" & steam -gamepadui -steamos3 -steampal -steamdeck" >> "$HOME/steamos.log" 2>&1
 fi
 EOF
-chmod +x /usr/local/bin/steamos-session
+chmod +x /usr/bin/steamos-session
 
 # Create the wayland session file for GDM
 mkdir -p /usr/share/wayland-sessions
@@ -126,7 +126,7 @@ cat << 'EOF' > /usr/share/wayland-sessions/steamos.desktop
 [Desktop Entry]
 Name=Steam OS
 Comment=This session logs you into the Steam Gamepad UI using Gamescope
-Exec=/usr/local/bin/steamos-session
+Exec=/usr/bin/steamos-session
 Type=Application
 DesktopNames=steamos
 EOF
@@ -270,16 +270,16 @@ curl -sL https://github.com/hhd-dev/hhd-ui/releases/latest/download/hhd-ui.AppIm
 chmod +x /opt/hhd/hhd-ui.AppImage
 
 # Create a robust wrapper to bypass Ubuntu 24.04+ AppArmor namespace restrictions
-cat << 'EOF' > /usr/local/bin/hhd-ui
+cat << 'EOF' > /usr/bin/hhd-ui
 #!/bin/bash
 exec /opt/hhd/hhd-ui.AppImage --no-sandbox "$@"
 EOF
-chmod +x /usr/local/bin/hhd-ui
+chmod +x /usr/bin/hhd-ui
 
-# Create symbolic links to /usr/local/bin so the system can run them naturally
-ln -sf /opt/hhd/venv/bin/hhd /usr/local/bin/hhd
+# Create symbolic links to /usr/bin so the system can run them naturally
+ln -sf /opt/hhd/venv/bin/hhd /usr/bin/hhd
 if [ -f /opt/hhd/venv/bin/hhd-overlay ]; then
-    ln -sf /opt/hhd/venv/bin/hhd-overlay /usr/local/bin/hhd-overlay
+    ln -sf /opt/hhd/venv/bin/hhd-overlay /usr/bin/hhd-overlay
 fi
 
 echo "[4/4] Configuring Udev Rules and Systemd Services for HHD..."

@@ -42,9 +42,9 @@ remove|purge|failed-upgrade|abort-install|abort-upgrade|disappear)
     udevadm control --reload-rules 2>/dev/null || true
 
     # ---- Remove HHD symlinks ----------------------------------------------------
-    rm -f /usr/local/bin/hhd
-    rm -f /usr/local/bin/hhd-overlay
-    rm -f /usr/local/bin/hhd-ui
+    rm -f /usr/bin/hhd
+    rm -f /usr/bin/hhd-overlay
+    rm -f /usr/bin/hhd-ui
 
     echo "ubuntu-handheld: reverted. Reboot to return to standard Ubuntu behaviour."
     ;;
