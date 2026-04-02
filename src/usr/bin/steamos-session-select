@@ -8,4 +8,4 @@ busctl call org.freedesktop.Accounts "/org/freedesktop/Accounts/User$(id -u)" \
     org.freedesktop.Accounts.User SetXSession s "ubuntu"
 busctl call org.freedesktop.Accounts "/org/freedesktop/Accounts/User$(id -u)" \
     org.freedesktop.Accounts.User SetSession s "ubuntu"
-loginctl terminate-session "$XDG_SESSION_ID"
+pkill gamescope

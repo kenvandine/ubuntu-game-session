@@ -7,11 +7,11 @@ set -e
 case "$1" in
 install|upgrade)
     # Add the Valve Steam signing key if not already present
-    mkdir -p /etc/apt/keyrings
-    if [ ! -f /etc/apt/keyrings/steam.gpg ]; then
+    mkdir -p /usr/share/keyrings
+    if [ ! -f /usr/share/keyrings/steam.gpg ]; then
         echo "ubuntu-handheld: fetching Valve Steam APT signing key..."
         curl -sL https://repo.steampowered.com/steam/archive/stable/steam.gpg \
-            -o /etc/apt/keyrings/steam.gpg
+            -o /usr/share/keyrings/steam.gpg
     fi
 
     # Enable i386 architecture (required by steam-launcher)

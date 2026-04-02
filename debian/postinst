@@ -40,8 +40,9 @@ configure)
             while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/dpkg/lock >/dev/null 2>&1; do
                 sleep 2
             done
-            echo "Locks released. Installing steam-launcher..."
-            apt-get install -y steam-launcher
+            echo "Locks released. Updating repositories and installing steam-launcher + dependencies..."
+            apt-get update -q
+            apt-get install -y steam-launcher steam-libs-amd64 steam-libs-i386
         '
     fi
 

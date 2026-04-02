@@ -25,9 +25,9 @@ XF86AudioMute
     wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
 KEYBINDINGS
 
-if [ ! -d "$HOME/.steam/steam" ] && [ ! -d "$HOME/.local/share/Steam" ]; then
-    echo "First run: launching without steamos flags for safe initial update..." > "$HOME/steamos.log"
-    exec gamescope -e -f -- bash -c "sxhkd -c \"\$HOME/.config/sxhkd/sxhkdrc\" & steam -gamepadui" >> "$HOME/steamos.log" 2>&1
-else
-    exec gamescope -e -f -- bash -c "sxhkd -c \"\$HOME/.config/sxhkd/sxhkdrc\" & steam -gamepadui -steamos3 -steampal -steamdeck" >> "$HOME/steamos.log" 2>&1
+STEAM_FLAGS="-gamepadui"
+if [ -f "$HOME/.steam/steam/config/loginusers.vdf" ] || [ -f "$HOME/.local/share/Steam/config/loginusers.vdf" ]; then
+    STEAM_FLAGS="-gamepadui -steamos3 -steampal -steamdeck"
 fi
+
+exec gamescope -e -f -- bash -c "sxhkd -c \"\$HOME/.config/sxhkd/sxhkdrc\" & steam \$STEAM_FLAGS" >> "$HOME/steamos.log" 2>&1

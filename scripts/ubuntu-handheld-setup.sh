@@ -111,12 +111,14 @@ XF86AudioMute
     wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
 KEYBINDINGS
 
-if [ ! -d "$HOME/.steam/steam" ] && [ ! -d "$HOME/.local/share/Steam" ]; then
-    echo "First run detected: Launching without steamos flags to allow safe initial client update..." > "$HOME/steamos.log"
-    exec gamescope -e -f -- bash -c "sxhkd -c \"\$HOME/.config/sxhkd/sxhkdrc\" & steam -gamepadui" >> "$HOME/steamos.log" 2>&1
-else
-    exec gamescope -e -f -- bash -c "sxhkd -c \"\$HOME/.config/sxhkd/sxhkdrc\" & steam -gamepadui -steamos3 -steampal -steamdeck" >> "$HOME/steamos.log" 2>&1
-fi
+    # Only activate strict SteamOS UI flags if steam is fully logged in.
+    # Otherwise the "Out of Box Experience" (OOBE) network updater fails.
+    STEAM_FLAGS="-gamepadui"
+    if [ -f "$HOME/.steam/steam/config/loginusers.vdf" ] || [ -f "$HOME/.local/share/Steam/config/loginusers.vdf" ]; then
+        STEAM_FLAGS="-gamepadui -steamos3 -steampal -steamdeck"
+    fi
+
+    exec gamescope -e -f -- bash -c "sxhkd -c \"\$HOME/.config/sxhkd/sxhkdrc\" & steam \$STEAM_FLAGS" >> "$HOME/steamos.log" 2>&1
 EOF
 chmod +x /usr/bin/steamos-session
 
@@ -141,7 +143,7 @@ busctl call org.freedesktop.Accounts "/org/freedesktop/Accounts/User$(id -u)" \
     org.freedesktop.Accounts.User SetXSession s "ubuntu"
 busctl call org.freedesktop.Accounts "/org/freedesktop/Accounts/User$(id -u)" \
     org.freedesktop.Accounts.User SetSession s "ubuntu"
-loginctl terminate-session "$XDG_SESSION_ID"
+pkill gamescope
 EOF
 chmod +x /usr/bin/steamos-session-select
 
