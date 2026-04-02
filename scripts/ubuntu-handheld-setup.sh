@@ -118,7 +118,7 @@ KEYBINDINGS
         STEAM_FLAGS="-gamepadui -steamos3 -steampal -steamdeck"
     fi
 
-    exec gamescope -e -f -- bash -c "sxhkd -c \"\$HOME/.config/sxhkd/sxhkdrc\" & steam \$STEAM_FLAGS" >> "$HOME/steamos.log" 2>&1
+    exec gamescope -e -f -- bash -c "sxhkd -c \"\$HOME/.config/sxhkd/sxhkdrc\" & steam $STEAM_FLAGS" >> "$HOME/steamos.log" 2>&1
 EOF
 chmod +x /usr/bin/steamos-session
 
