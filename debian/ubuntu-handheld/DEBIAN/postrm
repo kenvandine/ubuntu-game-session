@@ -1,0 +1,83 @@
+#!/bin/bash
+# postrm - Runs as root on apt remove / apt purge ubuntu-handheld
+set -e
+
+STATE_DIR=/var/lib/ubuntu-handheld
+
+case "$1" in
+remove|purge|failed-upgrade|abort-install|abort-upgrade|disappear)
+
+    echo "ubuntu-handheld: reverting configuration changes..."
+
+    # ---- Restore original GDM config --------------------------------------------
+    if [ -f "$STATE_DIR/gdm3-custom.conf.orig" ]; then
+        cp "$STATE_DIR/gdm3-custom.conf.orig" /etc/gdm3/custom.conf
+        echo "ubuntu-handheld: /etc/gdm3/custom.conf restored"
+    fi
+
+    # ---- Disable and remove systemd services ------------------------------------
+    # Read the stored user so we disable the right hhd instance
+    TARGET_USER=""
+    [ -f "$STATE_DIR/target_user" ] && TARGET_USER=$(cat "$STATE_DIR/target_user")
+
+    if [ -n "$TARGET_USER" ]; then
+        systemctl disable --now "hhd@${TARGET_USER}.service" 2>/dev/null || true
+    fi
+    systemctl disable --now steamos-autologin-reset.service 2>/dev/null || true
+
+    rm -f /etc/systemd/system/steamos-autologin-reset.service
+    rm -f /etc/systemd/system/hhd@.service
+    systemctl daemon-reload
+
+    # ---- Remove polkit rule -----------------------------------------------------
+    rm -f /etc/polkit-1/rules.d/50-gdm-restart.rules
+
+    # ---- Remove sudoers entry ---------------------------------------------------
+    rm -f /etc/sudoers.d/steamos-desktop-switch
+
+    # ---- Remove udev rules ------------------------------------------------------
+    rm -f /etc/udev/rules.d/83-hhd-user.rules
+    rm -f /etc/udev/rules.d/83-hhd.rules
+    rm -f /etc/udev/rules.d/99-hhd-playstation-touchpad.rules
+    udevadm control --reload-rules 2>/dev/null || true
+
+    # ---- Remove HHD symlinks ----------------------------------------------------
+    rm -f /usr/bin/hhd
+    rm -f /usr/bin/hhd-overlay
+    rm -f /usr/bin/hhd-ui
+
+    echo "ubuntu-handheld: reverted. Reboot to return to standard Ubuntu behaviour."
+    ;;
+esac
+
+# ---- Purge: remove everything including state and /opt/hhd --------------------
+if [ "$1" = "purge" ]; then
+    echo "ubuntu-handheld: purging all data..."
+
+    TARGET_USER=""
+    [ -f "$STATE_DIR/target_user" ] && TARGET_USER=$(cat "$STATE_DIR/target_user")
+
+    # Remove desktop shortcut
+    if [ -n "$TARGET_USER" ]; then
+        USER_HOME=$(eval echo ~"$TARGET_USER")
+        rm -f "$USER_HOME/Desktop/Return to Gaming Mode.desktop"
+    fi
+
+    # Remove HHD venv and AppImage
+    rm -rf /opt/hhd
+
+    # Remove HHD global config dir
+    rm -rf /etc/hhd
+
+    # Remove the Valve Steam APT repo and key (were shipped as package payloads)
+    rm -f /etc/apt/sources.list.d/steam.list
+    rm -f /etc/apt/keyrings/steam.gpg
+    apt-get update -q 2>/dev/null || true
+
+    # Remove state directory
+    rm -rf "$STATE_DIR"
+
+    echo "ubuntu-handheld: purge complete."
+fi
+
+exit 0

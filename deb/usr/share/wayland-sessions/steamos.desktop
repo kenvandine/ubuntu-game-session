@@ -1,6 +1,0 @@
-[Desktop Entry]
-Name=Steam OS
-Comment=This session logs you into the Steam Gamepad UI using Gamescope
-Exec=/usr/local/bin/steamos-session
-Type=Application
-DesktopNames=steamos
