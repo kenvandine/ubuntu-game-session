@@ -8,4 +8,4 @@ busctl call org.freedesktop.Accounts "/org/freedesktop/Accounts/User$(id -u)" \
     org.freedesktop.Accounts.User SetXSession s "ubuntu"
 busctl call org.freedesktop.Accounts "/org/freedesktop/Accounts/User$(id -u)" \
     org.freedesktop.Accounts.User SetSession s "ubuntu"
-pkill gamescope
+pkill -9 gamescope
