@@ -115,14 +115,14 @@ fi
 
 echo "[6/7] Testing Package Removal (Configuration Reversion) ..."
 # Wait for the asynchronous background steam-launcher installation (launched in postinst) to finish.
-# First wait for the systemd transient unit itself to complete — this is definitive and avoids
-# the TOCTOU race where fuser reports the lock as free before the async service acquires it.
-multipass exec "$VM_NAME" -- bash -c '
+# We do this by explicitly waiting for the steam-launcher package to become installed,
+# which guarantees the background apt-get process has reached its payload.
+multipass exec "$VM_NAME" -- sudo bash -c '
     echo "Waiting for background Steam installer service to complete..."
-    while systemctl is-active udeck-steam-installer.service >/dev/null 2>&1; do
+    while ! dpkg -s steam-launcher >/dev/null 2>&1; do
         sleep 5
     done
-    # Belt-and-suspenders: also wait for any lingering dpkg locks
+    # Now that it is installed, wait for any lingering dpkg locks to clear as it finishes up
     while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/dpkg/lock >/dev/null 2>&1; do
         echo "Waiting for dpkg locks to release..."
         sleep 3
