@@ -45,7 +45,7 @@ dpkg --add-architecture i386
 apt-get update
 
 # Install required packages (from standard repos, avoiding pipx)
-# Note: Ubuntu 24.04 (Noble) has good Support for gamescope natively
+# Note: Ubuntu 26.04 (Resolute Raccoon) has good support for gamescope natively
 # Use steam-installer which is commonly the package name on ubuntu, or just steam using the multiverse repo.
 # Some environments use steam-installer instead of steam.
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
@@ -271,7 +271,7 @@ echo "Downloading HHD-UI AppImage..."
 curl -sL https://github.com/hhd-dev/hhd-ui/releases/latest/download/hhd-ui.AppImage -o /opt/hhd/hhd-ui.AppImage
 chmod +x /opt/hhd/hhd-ui.AppImage
 
-# Create a robust wrapper to bypass Ubuntu 24.04+ AppArmor namespace restrictions
+# Create a robust wrapper to bypass Ubuntu 24.04+ AppArmor namespace restrictions (still needed on 26.04)
 cat << 'EOF' > /usr/bin/hhd-ui
 #!/bin/bash
 exec /opt/hhd/hhd-ui.AppImage --no-sandbox "$@"

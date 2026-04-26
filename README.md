@@ -70,7 +70,7 @@ sudo snap install multipass
 scripts/test-in-vm.sh
 ```
 
-Spins up a fresh Ubuntu 25.10 container and runs the setup script through a suite of edge-case tests.
+Spins up a fresh Ubuntu 26.04 container and runs the setup script through a suite of edge-case tests.
 
 ### How to contribute HHD to Ubuntu universe (MOTU)
 

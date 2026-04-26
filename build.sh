@@ -24,10 +24,10 @@ dpkg-buildpackage -us -uc -b
 
 echo ""
 echo "=== Build complete ==="
-echo "Package is located in the parent directory: ../ubuntu-handheld_1.0-1_all.deb"
+echo "Package is located in the parent directory: ../ubuntu-handheld_1.1-1_all.deb"
 echo ""
 echo "To install:"
-echo "  sudo apt install -y ../ubuntu-handheld_1.0-1_all.deb"
+echo "  sudo apt install -y ../ubuntu-handheld_1.1-1_all.deb"
 echo ""
 echo "To remove (reverts all config changes):"
 echo "  sudo apt remove ubuntu-handheld"

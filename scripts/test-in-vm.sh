@@ -7,7 +7,7 @@ set -e
 # Multipass VM Integration Suite for the ubuntu-handheld Debian package.
 # This script:
 # 1. Triggers the local build of the .deb package.
-# 2. Spins up an isolated Ubuntu 25.10 container.
+# 2. Spins up an isolated Ubuntu 26.04 container.
 # 3. Installs the package and asserts all config states (HHD, GDM, polkit).
 # 4. Removes the package and asserts clean configuration reversion.
 # 5. Purges the package and asserts complete system sanitation.
@@ -45,8 +45,8 @@ echo " VM Name: $VM_NAME"
 echo " Package Payload: $DEB_FILE"
 echo "========================================================="
 
-echo "[2/7] Launching Ubuntu 25.10 Virtual Machine..."
-multipass launch 25.10 --name "$VM_NAME" --cpus 2 --memory 2G --disk 10G
+echo "[2/7] Launching Ubuntu 26.04 Virtual Machine..."
+multipass launch 26.04 --name "$VM_NAME" --cpus 2 --memory 2G --disk 10G
 
 # Cleanup routine
 cleanup() {
@@ -114,8 +114,21 @@ else
 fi
 
 echo "[6/7] Testing Package Removal (Configuration Reversion) ..."
-# Wait for the asynchronous background steam-launcher installation (launched in postinst) to finish
-multipass exec "$VM_NAME" -- bash -c 'while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/dpkg/lock >/dev/null 2>&1; do echo "Waiting for background Steam installation to complete..."; sleep 5; done'
+# Wait for the asynchronous background steam-launcher installation (launched in postinst) to finish.
+# First wait for the systemd transient unit itself to complete — this is definitive and avoids
+# the TOCTOU race where fuser reports the lock as free before the async service acquires it.
+multipass exec "$VM_NAME" -- bash -c '
+    echo "Waiting for background Steam installer service to complete..."
+    while systemctl is-active ubuntu-handheld-steam-installer.service >/dev/null 2>&1; do
+        sleep 5
+    done
+    # Belt-and-suspenders: also wait for any lingering dpkg locks
+    while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/dpkg/lock >/dev/null 2>&1; do
+        echo "Waiting for dpkg locks to release..."
+        sleep 3
+    done
+    echo "All clear."
+'
 multipass exec "$VM_NAME" -- sudo apt-get remove -y ubuntu-handheld
 
 # Verify GDM Config reverted
