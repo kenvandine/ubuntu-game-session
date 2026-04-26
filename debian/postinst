@@ -1,8 +1,8 @@
 #!/bin/bash
-# postinst - Runs as root after dpkg -i installs the ubuntu-handheld package
+# postinst - Runs as root after dpkg -i installs the udeck package
 set -e
 
-STATE_DIR=/var/lib/ubuntu-handheld
+STATE_DIR=/var/lib/udeck
 
 case "$1" in
 configure)
@@ -12,12 +12,12 @@ configure)
         TARGET_USER=$(id -un 1000 2>/dev/null)
     fi
     if [ -z "$TARGET_USER" ]; then
-        echo "ERROR: ubuntu-handheld: could not detect the primary user. Aborting." >&2
+        echo "ERROR: udeck: could not detect the primary user. Aborting." >&2
         exit 1
     fi
     USER_UID=$(id -u "$TARGET_USER")
     USER_HOME=$(eval echo ~"$TARGET_USER")
-    echo "ubuntu-handheld: configuring for user '$TARGET_USER' (uid ${USER_UID})"
+    echo "udeck: configuring for user '$TARGET_USER' (uid ${USER_UID})"
 
     # ---- Save originals for clean revert -----------------------------------------
     mkdir -p "$STATE_DIR"
@@ -33,8 +33,8 @@ configure)
     # and the GPG key was added in preinst. apt-get handles it like any other package.
     # However, because we are currently inside a `dpkg` installation lock, we cannot
     # synchronously invoke `apt-get install`. We use a transient systemd task to wait and install.
-    echo "ubuntu-handheld: queueing asynchronous installation of steam-launcher and dependency verification..."
-    systemd-run --unit=ubuntu-handheld-steam-installer bash -c '
+    echo "udeck: queueing asynchronous installation of steam-launcher and dependency verification..."
+    systemd-run --unit=udeck-steam-installer bash -c '
         echo "Waiting for dpkg locks to release..."
         while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/dpkg/lock >/dev/null 2>&1; do
             sleep 2
@@ -47,7 +47,7 @@ configure)
     # ---- GDM: automatic & timed login --------------------------------------------
     tee /etc/gdm3/custom.conf > /dev/null << GDMEOF
 # GDM configuration storage
-# Managed by ubuntu-handheld package -- remove package to revert
+# Managed by udeck package -- remove package to revert
 [daemon]
 AutomaticLoginEnable=True
 AutomaticLogin=${TARGET_USER}
@@ -162,7 +162,7 @@ UIEOF
     systemctl daemon-reload
     systemctl enable "hhd@${TARGET_USER}.service"
     systemctl restart "hhd@${TARGET_USER}.service" || \
-        echo "ubuntu-handheld: HHD could not start (normal in VM or without handheld device)"
+        echo "udeck: HHD could not start (normal in VM or without handheld device)"
 
     # ---- Set AccountsService session to steamos right now -----------------------
     busctl call org.freedesktop.Accounts \
@@ -197,7 +197,7 @@ DESKEOF
          gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true" \
         2>/dev/null || true
 
-    echo "ubuntu-handheld: installation complete. Please reboot to boot into SteamOS."
+    echo "udeck: installation complete. Please reboot to boot into SteamOS."
     ;;
 
 abort-upgrade|abort-remove|abort-deconfigure)

@@ -1,11 +1,11 @@
 #!/bin/bash
-# build.sh - Builds the ubuntu-handheld .deb package using dpkg-buildpackage
+# build.sh - Builds the udeck .deb package using dpkg-buildpackage
 # Run from the repo root.
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "=== Building ubuntu-handheld package ==="
+echo "=== Building udeck package ==="
 
 if ! command -v dpkg-buildpackage >/dev/null 2>&1; then
     echo "ERROR: dpkg-buildpackage not found."
@@ -24,13 +24,13 @@ dpkg-buildpackage -us -uc -b
 
 echo ""
 echo "=== Build complete ==="
-echo "Package is located in the parent directory: ../ubuntu-handheld_1.1-1_all.deb"
+echo "Package is located in the parent directory: ../udeck_1.1-1_all.deb"
 echo ""
 echo "To install:"
-echo "  sudo apt install -y ../ubuntu-handheld_1.1-1_all.deb"
+echo "  sudo apt install -y ../udeck_1.1-1_all.deb"
 echo ""
 echo "To remove (reverts all config changes):"
-echo "  sudo apt remove ubuntu-handheld"
+echo "  sudo apt remove udeck"
 echo ""
 echo "To purge (also removes HHD and desktop shortcut):"
-echo "  sudo apt purge ubuntu-handheld"
+echo "  sudo apt purge udeck"

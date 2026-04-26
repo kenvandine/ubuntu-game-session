@@ -1,12 +1,12 @@
-ubuntu-handheld (1.1-1) resolute; urgency=medium
+udeck (1.1-1) resolute; urgency=medium
 
   * Port to Ubuntu 26.04 (Resolute Raccoon).
   * Update VM test target to 26.04.
 
- -- ubuntu-handheld contributors <ubuntu-handheld@localhost>  Sat, 26 Apr 2026 14:00:00 +0300
+ -- udeck contributors <udeck@localhost>  Sat, 26 Apr 2026 14:00:00 +0300
 
-ubuntu-handheld (1.0-1) unstable; urgency=medium
+udeck (1.0-1) unstable; urgency=medium
 
   * Initial Debian package restructuring.
 
- -- ubuntu-handheld contributors <ubuntu-handheld@localhost>  Sat, 28 Mar 2026 00:00:00 +0000
+ -- udeck contributors <udeck@localhost>  Sat, 28 Mar 2026 00:00:00 +0000

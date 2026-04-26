@@ -4,7 +4,7 @@ set -e
 # ==============================================================================
 # test-in-vm.sh
 # 
-# Multipass VM Integration Suite for the ubuntu-handheld Debian package.
+# Multipass VM Integration Suite for the udeck Debian package.
 # This script:
 # 1. Triggers the local build of the .deb package.
 # 2. Spins up an isolated Ubuntu 26.04 container.
@@ -31,13 +31,13 @@ if ! bash build.sh; then
     exit 1
 fi
 
-DEB_FILE=$(ls -1 ../ubuntu-handheld_*.deb | head -n 1)
+DEB_FILE=$(ls -1 ../udeck_*.deb | head -n 1)
 if [ -z "$DEB_FILE" ]; then
     echo "Error: Could not locate built .deb file in parent directory."
     exit 1
 fi
 
-VM_NAME="ubuntu-handheld-test-$(date +%s)"
+VM_NAME="udeck-test-$(date +%s)"
 
 echo "========================================================="
 echo " Starting Isolated VM Integration Test"
@@ -119,7 +119,7 @@ echo "[6/7] Testing Package Removal (Configuration Reversion) ..."
 # the TOCTOU race where fuser reports the lock as free before the async service acquires it.
 multipass exec "$VM_NAME" -- bash -c '
     echo "Waiting for background Steam installer service to complete..."
-    while systemctl is-active ubuntu-handheld-steam-installer.service >/dev/null 2>&1; do
+    while systemctl is-active udeck-steam-installer.service >/dev/null 2>&1; do
         sleep 5
     done
     # Belt-and-suspenders: also wait for any lingering dpkg locks
@@ -129,7 +129,7 @@ multipass exec "$VM_NAME" -- bash -c '
     done
     echo "All clear."
 '
-multipass exec "$VM_NAME" -- sudo apt-get remove -y ubuntu-handheld
+multipass exec "$VM_NAME" -- sudo apt-get remove -y udeck
 
 # Verify GDM Config reverted
 if multipass exec "$VM_NAME" -- grep -q "AutomaticLoginEnable=True" /etc/gdm3/custom.conf; then
@@ -148,15 +148,15 @@ else
 fi
 
 echo "[7/7] Testing Package Purge (System Sanitation) ..."
-multipass exec "$VM_NAME" -- sudo apt-get purge -y ubuntu-handheld
+multipass exec "$VM_NAME" -- sudo apt-get purge -y udeck
 
 # Verify total isolation cleanup
 if multipass exec "$VM_NAME" -- stat /opt/hhd > /dev/null 2>&1; then
     echo " [FAIL] /opt/hhd was not purged!"
     exit 1
 fi
-if multipass exec "$VM_NAME" -- stat /var/lib/ubuntu-handheld > /dev/null 2>&1; then
-    echo " [FAIL] /var/lib/ubuntu-handheld state dir was not purged!"
+if multipass exec "$VM_NAME" -- stat /var/lib/udeck > /dev/null 2>&1; then
+    echo " [FAIL] /var/lib/udeck state dir was not purged!"
     exit 1
 fi
 echo " [OK] Post-purge directories completely wiped."

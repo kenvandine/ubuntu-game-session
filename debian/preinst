@@ -1,5 +1,5 @@
 #!/bin/bash
-# preinst - Runs as root before dpkg unpacks the ubuntu-handheld package
+# preinst - Runs as root before dpkg unpacks the udeck package
 # Responsible for adding the Valve Steam APT signing key so that
 # steam-launcher can be installed as a proper apt dependency in postinst.
 set -e
@@ -9,7 +9,7 @@ install|upgrade)
     # Add the Valve Steam signing key if not already present
     mkdir -p /usr/share/keyrings
     if [ ! -f /usr/share/keyrings/steam.gpg ]; then
-        echo "ubuntu-handheld: fetching Valve Steam APT signing key..."
+        echo "udeck: fetching Valve Steam APT signing key..."
         curl -sL https://repo.steampowered.com/steam/archive/stable/steam.gpg \
             -o /usr/share/keyrings/steam.gpg
     fi

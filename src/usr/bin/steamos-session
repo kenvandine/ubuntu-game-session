@@ -1,6 +1,6 @@
 #!/bin/bash
 # steamos-session - Gamescope wrapper for the SteamOS-like session
-# Installed by ubuntu-handheld package to /usr/local/bin/steamos-session
+# Installed by udeck package to /usr/local/bin/steamos-session
 
 # Connect directly to the host's systemd user D-Bus so Steam can communicate
 # with PipeWire/PulseAudio. Spawning a new dbus-launch isolates Steam from audio!

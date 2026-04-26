@@ -1,6 +1,6 @@
 #!/bin/bash
 # steamos-session-select - Called by Steam when user clicks "Switch to Desktop"
-# Installed by ubuntu-handheld package to /usr/bin/steamos-session-select
+# Installed by udeck package to /usr/bin/steamos-session-select
 
 # Sets AccountsService session to ubuntu, then terminates the Gamescope session.
 # GDM auto-login will log back in to the ubuntu desktop.

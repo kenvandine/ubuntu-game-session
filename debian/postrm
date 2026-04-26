@@ -1,18 +1,18 @@
 #!/bin/bash
-# postrm - Runs as root on apt remove / apt purge ubuntu-handheld
+# postrm - Runs as root on apt remove / apt purge udeck
 set -e
 
-STATE_DIR=/var/lib/ubuntu-handheld
+STATE_DIR=/var/lib/udeck
 
 case "$1" in
 remove|purge|failed-upgrade|abort-install|abort-upgrade|disappear)
 
-    echo "ubuntu-handheld: reverting configuration changes..."
+    echo "udeck: reverting configuration changes..."
 
     # ---- Restore original GDM config --------------------------------------------
     if [ -f "$STATE_DIR/gdm3-custom.conf.orig" ]; then
         cp "$STATE_DIR/gdm3-custom.conf.orig" /etc/gdm3/custom.conf
-        echo "ubuntu-handheld: /etc/gdm3/custom.conf restored"
+        echo "udeck: /etc/gdm3/custom.conf restored"
     fi
 
     # ---- Disable and remove systemd services ------------------------------------
@@ -46,13 +46,13 @@ remove|purge|failed-upgrade|abort-install|abort-upgrade|disappear)
     rm -f /usr/bin/hhd-overlay
     rm -f /usr/bin/hhd-ui
 
-    echo "ubuntu-handheld: reverted. Reboot to return to standard Ubuntu behaviour."
+    echo "udeck: reverted. Reboot to return to standard Ubuntu behaviour."
     ;;
 esac
 
 # ---- Purge: remove everything including state and /opt/hhd --------------------
 if [ "$1" = "purge" ]; then
-    echo "ubuntu-handheld: purging all data..."
+    echo "udeck: purging all data..."
 
     TARGET_USER=""
     [ -f "$STATE_DIR/target_user" ] && TARGET_USER=$(cat "$STATE_DIR/target_user")
@@ -77,7 +77,7 @@ if [ "$1" = "purge" ]; then
     # Remove state directory
     rm -rf "$STATE_DIR"
 
-    echo "ubuntu-handheld: purge complete."
+    echo "udeck: purge complete."
 fi
 
 exit 0

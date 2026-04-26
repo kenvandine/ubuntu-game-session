@@ -1,11 +1,11 @@
-Source: ubuntu-handheld
+Source: udeck
 Section: misc
 Priority: optional
-Maintainer: ubuntu-handheld contributors <ubuntu-handheld@localhost>
+Maintainer: udeck contributors <udeck@localhost>
 Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.6.2
 
-Package: ubuntu-handheld
+Package: udeck
 Architecture: all
 Depends: gamescope,
          sxhkd,
