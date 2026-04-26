@@ -7,6 +7,10 @@ Two things live here: a **ready-to-install `.deb` package** for end users, and *
 
 ## 1. Tutorials
 
+### Prerequisites
+
+- A fresh installation of **Ubuntu 26.04** on your target device.
+
 ### Installing via the `.deb` package (recommended)
 
 ```bash
