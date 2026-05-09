@@ -331,6 +331,14 @@ else
     echo "Could not detect standard user. To enable HHD on boot, run: sudo systemctl enable hhd@<your_username>"
 fi
 
+echo "[5/5] Applying Optimized Kernel Flags for Unified Memory..."
+mkdir -p /etc/default/grub.d
+cat << 'GRUBEOF' > /etc/default/grub.d/10-udeck.cfg
+# Optimized kernel flags for unified memory / APUs
+GRUB_CMDLINE_LINUX_DEFAULT="$GRUB_CMDLINE_LINUX_DEFAULT ttm.pages_limit=8388608"
+GRUBEOF
+update-grub || true
+
 echo "=========================================="
 echo " Setup Complete! "
 echo "=========================================="
