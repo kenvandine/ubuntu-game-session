@@ -14,20 +14,20 @@ Two things live here: a **ready-to-install `.deb` package** for end users, and *
 ### Installing via the `.deb` packages (recommended)
 
 ```bash
-bash build.sh   # builds ../ubuntu-game-session_1.3-1_all.deb and ../ubuntu-game-handheld_1.3-1_all.deb
+bash build.sh   # builds ../ubuntu-game-session_0.3_all.deb and ../ubuntu-game-handheld_0.3_all.deb
 ```
 
 **Desktop or laptop** — installs an optional "Ubuntu Game Session" at the GDM login screen:
 ```bash
-sudo apt install ../ubuntu-game-session_1.2-1_all.deb
+sudo apt install ../ubuntu-game-session_0.3_all.deb
 ```
 
 **Handheld gaming PC** (Legion Go, Steam Deck, etc.) — adds GDM autologin, HHD, and boot-into-gaming-mode:
 ```bash
 # Build hhd packages first (from the sibling ../hhd repo)
-cd ../hhd && dpkg-buildpackage -us -uc -b && cd -
-sudo apt install -y ../python3-hhd_4.1.10-1_all.deb ../hhd_4.1.10-1_all.deb
-sudo apt install -y ../ubuntu-game-handheld_1.3-1_all.deb
+cd ../hhd && bash build.sh && cd -
+sudo apt install -y ../python3-hhd_4.1.10-0_all.deb ../hhd_4.1.10-0_all.deb
+sudo apt install -y ../ubuntu-game-handheld_0.3_all.deb
 ```
 (`ubuntu-game-handheld` pulls in `ubuntu-game-session` and `hhd` automatically as dependencies.)
 

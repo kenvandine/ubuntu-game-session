@@ -23,26 +23,41 @@ if ! command -v multipass &> /dev/null; then
 fi
 
 echo "========================================================="
-echo " [1/7] Building the .deb package locally"
+echo " [1/7] Building packages locally"
 echo "========================================================="
 cd "$REPO_ROOT"
 if ! bash build.sh; then
-    echo "Error: Failed to build the Debian package."
+    echo "Error: Failed to build ubuntu-game-session packages."
     exit 1
 fi
 
-DEB_FILE=$(ls -1 ../udeck_*.deb | head -n 1)
-if [ -z "$DEB_FILE" ]; then
-    echo "Error: Could not locate built .deb file in parent directory."
-    exit 1
+HHD_DIR="$(dirname "$REPO_ROOT")/hhd"
+if [ -d "$HHD_DIR" ]; then
+    echo "Building hhd packages from ${HHD_DIR}..."
+    if ! bash "$HHD_DIR/build.sh"; then
+        echo "Warning: Failed to build hhd packages. Tests requiring hhd may fail."
+    fi
+else
+    echo "Warning: ../hhd not found. Install hhd manually before running this test."
 fi
 
-VM_NAME="udeck-test-$(date +%s)"
+SESSION_DEB=$(ls -1 ../ubuntu-game-session_*.deb 2>/dev/null | head -n 1)
+HANDHELD_DEB=$(ls -1 ../ubuntu-game-handheld_*.deb 2>/dev/null | head -n 1)
+HHD_DEB=$(ls -1 ../hhd_*.deb 2>/dev/null | head -n 1)
+PYTHON3_HHD_DEB=$(ls -1 ../python3-hhd_*.deb 2>/dev/null | head -n 1)
+
+for f in "$SESSION_DEB" "$HANDHELD_DEB"; do
+    if [ -z "$f" ]; then
+        echo "Error: Could not locate all required .deb files in parent directory."
+        exit 1
+    fi
+done
+
+VM_NAME="ubuntu-game-session-test-$(date +%s)"
 
 echo "========================================================="
 echo " Starting Isolated VM Integration Test"
 echo " VM Name: $VM_NAME"
-echo " Package Payload: $DEB_FILE"
 echo "========================================================="
 
 echo "[2/7] Launching Ubuntu 26.04 Virtual Machine..."
@@ -57,15 +72,27 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "[3/7] Transferring $DEB_FILE into the VM..."
-multipass transfer "$DEB_FILE" "$VM_NAME":/home/ubuntu/package.deb
+echo "[3/7] Transferring packages into the VM..."
+multipass transfer "$SESSION_DEB" "$VM_NAME":/home/ubuntu/ubuntu-game-session.deb
+multipass transfer "$HANDHELD_DEB" "$VM_NAME":/home/ubuntu/ubuntu-game-handheld.deb
+if [ -n "$PYTHON3_HHD_DEB" ] && [ -n "$HHD_DEB" ]; then
+    multipass transfer "$PYTHON3_HHD_DEB" "$VM_NAME":/home/ubuntu/python3-hhd.deb
+    multipass transfer "$HHD_DEB" "$VM_NAME":/home/ubuntu/hhd.deb
+    HHD_DEBS="/home/ubuntu/python3-hhd.deb /home/ubuntu/hhd.deb"
+else
+    echo "Warning: hhd debs not found; will attempt to install hhd from apt universe."
+    HHD_DEBS=""
+fi
 
-echo "[4/7] Preparing VM Environment and Installing package via apt..."
+echo "[4/7] Preparing VM Environment and Installing packages via apt..."
 multipass exec "$VM_NAME" -- sudo add-apt-repository -y universe || true
-multipass exec "$VM_NAME" -- sudo add-apt-repository -y multiverse || true
 multipass exec "$VM_NAME" -- sudo apt-get update -q
-if multipass exec "$VM_NAME" -- sudo apt-get install -y /home/ubuntu/package.deb; then
-    echo " [OK] Package installed successfully."
+# Install local debs together so apt can resolve cross-dependencies
+if multipass exec "$VM_NAME" -- sudo apt-get install -y \
+        $HHD_DEBS \
+        /home/ubuntu/ubuntu-game-session.deb \
+        /home/ubuntu/ubuntu-game-handheld.deb; then
+    echo " [OK] Packages installed successfully."
 else
     echo " [FAIL] Package installation failed."
     exit 1
@@ -73,8 +100,8 @@ fi
 
 echo "[5/7] Executing Post-Install Verification Checks..."
 
-# Verify HHD service exists
-if multipass exec "$VM_NAME" -- stat /etc/systemd/system/hhd@.service > /dev/null 2>&1; then
+# Verify HHD systemd service file (installed by the hhd package)
+if multipass exec "$VM_NAME" -- stat /usr/lib/systemd/system/hhd@.service > /dev/null 2>&1; then
     echo " [OK] HHD systemd service file deployed."
 else
     echo " [FAIL] HHD systemd service file is missing!"

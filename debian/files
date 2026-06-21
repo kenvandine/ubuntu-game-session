@@ -1,3 +1,1 @@
-ubuntu-game-handheld_0.3_all.deb misc optional architecture=all
-ubuntu-game-session_0.3_all.deb misc optional architecture=all
-ubuntu-game-session_0.3_amd64.buildinfo misc optional
+ubuntu-game-session_0.3_source.buildinfo misc optional
