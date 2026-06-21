@@ -1,3 +1,19 @@
+ubuntu-game-session (1.3-1) resolute; urgency=medium
+
+  * Rename ubuntu-game-autologin to ubuntu-game-handheld.
+  * Drop HHD pip/venv/AppImage/udev installation from postinst — HHD is
+    now a proper package dependency (Depends: hhd) built from the
+    companion ../hhd source package.
+  * Simplify ubuntu-game-handheld.postinst: only configure GDM autologin,
+    polkit, sudoers, boot session reset service, and enable hhd@user.service.
+  * Simplify ubuntu-game-handheld.postrm: remove udev rule and HHD symlink
+    cleanup (now owned by the hhd package).
+  * State directory renamed to /var/lib/ubuntu-game-handheld.
+  * Revert Build-Depends to debhelper-compat + build-essential only.
+  * Update standalone setup script to install hhd via apt (with pip fallback).
+
+ -- ubuntu-game-session contributors <ubuntu-game-session@localhost>  Sat, 21 Jun 2026 14:19:00 -0400
+
 ubuntu-game-session (1.2-1) resolute; urgency=medium
 
   * Split single package into two binary packages:

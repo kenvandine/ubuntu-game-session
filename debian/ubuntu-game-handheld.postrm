@@ -1,23 +1,24 @@
 #!/bin/bash
-# ubuntu-game-autologin.postrm - Runs as root on package removal/purge.
-# Reverts GDM autologin config, removes systemd services, polkit rule,
-# sudoers entry, udev rules, and HHD symlinks.
+# ubuntu-game-handheld.postrm - Runs as root on package removal/purge.
+# Reverts GDM autologin config, removes the boot session reset service,
+# polkit rule, and sudoers entry. HHD and udev rules are managed by the
+# hhd package and are not touched here.
 set -e
 
-STATE_DIR=/var/lib/ubuntu-game-autologin
+STATE_DIR=/var/lib/ubuntu-game-handheld
 
 case "$1" in
 remove|purge|failed-upgrade|abort-install|abort-upgrade|disappear)
 
-    echo "ubuntu-game-autologin: reverting configuration changes..."
+    echo "ubuntu-game-handheld: reverting configuration changes..."
 
     # ---- Restore original GDM config --------------------------------------------
     if [ -f "$STATE_DIR/gdm3-custom.conf.orig" ]; then
         cp "$STATE_DIR/gdm3-custom.conf.orig" /etc/gdm3/custom.conf
-        echo "ubuntu-game-autologin: /etc/gdm3/custom.conf restored"
+        echo "ubuntu-game-handheld: /etc/gdm3/custom.conf restored"
     fi
 
-    # ---- Disable and remove systemd services ------------------------------------
+    # ---- Disable and remove the boot session reset service ----------------------
     TARGET_USER=""
     [ -f "$STATE_DIR/target_user" ] && TARGET_USER=$(cat "$STATE_DIR/target_user")
 
@@ -25,9 +26,7 @@ remove|purge|failed-upgrade|abort-install|abort-upgrade|disappear)
         systemctl disable --now "hhd@${TARGET_USER}.service" 2>/dev/null || true
     fi
     systemctl disable --now ubuntu-game-session-autologin-reset.service 2>/dev/null || true
-
     rm -f /etc/systemd/system/ubuntu-game-session-autologin-reset.service
-    rm -f /etc/systemd/system/hhd@.service
     systemctl daemon-reload
 
     # ---- Remove polkit rule -----------------------------------------------------
@@ -36,24 +35,13 @@ remove|purge|failed-upgrade|abort-install|abort-upgrade|disappear)
     # ---- Remove sudoers entry ---------------------------------------------------
     rm -f /etc/sudoers.d/ubuntu-game-session-switch
 
-    # ---- Remove udev rules ------------------------------------------------------
-    rm -f /etc/udev/rules.d/83-hhd-user.rules
-    rm -f /etc/udev/rules.d/83-hhd.rules
-    rm -f /etc/udev/rules.d/99-hhd-playstation-touchpad.rules
-    udevadm control --reload-rules 2>/dev/null || true
-
-    # ---- Remove HHD symlinks ----------------------------------------------------
-    rm -f /usr/bin/hhd
-    rm -f /usr/bin/hhd-overlay
-    rm -f /usr/bin/hhd-ui
-
-    echo "ubuntu-game-autologin: reverted. Reboot to return to standard Ubuntu behaviour."
+    echo "ubuntu-game-handheld: reverted. Reboot to return to standard Ubuntu behaviour."
     ;;
 esac
 
-# ---- Purge: remove state, HHD venv, AppImage, and desktop shortcut ------------
+# ---- Purge: remove state directory and desktop shortcut -----------------------
 if [ "$1" = "purge" ]; then
-    echo "ubuntu-game-autologin: purging all data..."
+    echo "ubuntu-game-handheld: purging all data..."
 
     TARGET_USER=""
     [ -f "$STATE_DIR/target_user" ] && TARGET_USER=$(cat "$STATE_DIR/target_user")
@@ -63,11 +51,9 @@ if [ "$1" = "purge" ]; then
         rm -f "$USER_HOME/Desktop/Return to Gaming Mode.desktop"
     fi
 
-    rm -rf /opt/hhd
-    rm -rf /etc/hhd
     rm -rf "$STATE_DIR"
 
-    echo "ubuntu-game-autologin: purge complete."
+    echo "ubuntu-game-handheld: purge complete."
 fi
 
 exit 0

@@ -14,7 +14,7 @@ Two things live here: a **ready-to-install `.deb` package** for end users, and *
 ### Installing via the `.deb` packages (recommended)
 
 ```bash
-bash build.sh   # builds ../ubuntu-game-session_1.2-1_all.deb and ../ubuntu-game-autologin_1.2-1_all.deb
+bash build.sh   # builds ../ubuntu-game-session_1.3-1_all.deb and ../ubuntu-game-handheld_1.3-1_all.deb
 ```
 
 **Desktop or laptop** — installs an optional "Ubuntu Game Session" at the GDM login screen:
@@ -24,9 +24,12 @@ sudo apt install ../ubuntu-game-session_1.2-1_all.deb
 
 **Handheld gaming PC** (Legion Go, Steam Deck, etc.) — adds GDM autologin, HHD, and boot-into-gaming-mode:
 ```bash
-sudo apt install ../ubuntu-game-autologin_1.2-1_all.deb
+# Build hhd packages first (from the sibling ../hhd repo)
+cd ../hhd && dpkg-buildpackage -us -uc -b && cd -
+sudo apt install -y ../python3-hhd_4.1.10-1_all.deb ../hhd_4.1.10-1_all.deb
+sudo apt install -y ../ubuntu-game-handheld_1.3-1_all.deb
 ```
-(`ubuntu-game-autologin` pulls in `ubuntu-game-session` automatically as a dependency.)
+(`ubuntu-game-handheld` pulls in `ubuntu-game-session` and `hhd` automatically as dependencies.)
 
 Reboot. The system boots directly into the Steam Gamepad UI.
 
@@ -65,10 +68,10 @@ The system restarts the display manager and auto-logs you into Ubuntu Game Sessi
 ### How to fully uninstall
 
 ```bash
-sudo apt remove ubuntu-game-autologin    # reverts GDM config, removes services and HHD symlinks
-sudo apt purge ubuntu-game-autologin     # also removes HHD venv, /opt/hhd, desktop shortcut
-sudo apt remove ubuntu-game-session      # removes session entry and Steam snap
-sudo apt purge ubuntu-game-session       # also removes Valve Steam APT key
+sudo apt remove ubuntu-game-handheld    # reverts GDM config, removes services
+sudo apt purge ubuntu-game-handheld     # also removes desktop shortcut and state
+sudo apt remove ubuntu-game-session     # removes session entry
+sudo apt remove hhd python3-hhd        # removes Handheld Daemon
 ```
 
 The `postrm` script restores the original `/etc/gdm3/custom.conf` from a backup taken at install time.
@@ -108,9 +111,9 @@ Immutable distributions like Bazzite are great appliances but are restrictive fo
 | Switch to Desktop | Steam calls `/usr/bin/ubuntu-game-session-select` → sets session to `ubuntu` → `loginctl terminate-session` |
 | Return to Gaming Mode | Desktop shortcut → `busctl` sets session to `ubuntu-game-session` → `systemctl restart gdm3` (polkit rule, no password) |
 
-### Why pip-in-venv for HHD?
+### Why a separate hhd package?
 
-`hhd` is not yet in Ubuntu universe. The `/opt/hhd/venv` approach is the correct pattern per PEP 668 for software not packaged for the distro — the same approach used by Home Assistant and Ansible. The `upstream/hhd-pkg/` scaffolding exists to change this long-term.
+`hhd` is packaged as a proper Debian source package in the sibling `../hhd` repository. Once accepted into Ubuntu universe, it will be available via `apt` as a standard dependency. Until then, build it locally from `../hhd` and install it before `ubuntu-game-handheld`. The `upstream/hhd-pkg/` directory contains the original MOTU scaffolding reference.
 
 ### The MOTU packaging path
 
@@ -138,12 +141,11 @@ The `upstream/hhd-pkg/` directory contains a complete Debian source package for 
 │   ├── ubuntu-game-session.preinst # ensures snapd is running
 │   ├── ubuntu-game-session.postinst# installs Steam snap
 │   ├── ubuntu-game-session.postrm  # purge cleanup
-│   ├── ubuntu-game-autologin.postinst # configures GDM, polkit, HHD, services
-│   └── ubuntu-game-autologin.postrm   # full revert on remove/purge
+│   ├── ubuntu-game-handheld.postinst # configures GDM, polkit, HHD service-enable
+│   └── ubuntu-game-handheld.postrm   # full revert on remove/purge
 ├── build.sh                        # wrapper to run dpkg-buildpackage
 └── upstream/
-    └── hhd-pkg/
-        └── debian/                 # MOTU packaging for upstream hhd
+    └── hhd-pkg/                    # original MOTU packaging scaffold (reference)
 ```
 
 ### Key system files (installed)
@@ -153,12 +155,11 @@ The `upstream/hhd-pkg/` directory contains a complete Debian source package for 
 | `/usr/bin/ubuntu-game-session` | ubuntu-game-session | Gamescope + Steam launcher wrapper |
 | `/usr/bin/ubuntu-game-session-select` | ubuntu-game-session | Steam "Switch to Desktop" hook |
 | `/usr/share/wayland-sessions/ubuntu-game-session.desktop` | ubuntu-game-session | GDM session entry |
-| `/etc/systemd/system/ubuntu-game-session-autologin-reset.service` | ubuntu-game-autologin | Resets session to Ubuntu Game Session on every boot |
-| `/etc/systemd/system/hhd@.service` | ubuntu-game-autologin | HHD daemon (per-user template) |
-| `/etc/polkit-1/rules.d/50-gdm-restart.rules` | ubuntu-game-autologin | Allows GDM restart without password |
-| `/opt/hhd/venv/` | ubuntu-game-autologin | Isolated Python venv for HHD |
-| `/opt/hhd/hhd-ui.AppImage` | ubuntu-game-autologin | HHD overlay UI |
-| `/var/lib/ubuntu-game-autologin/` | ubuntu-game-autologin | State directory (holds GDM config backup) |
+| `/etc/systemd/system/ubuntu-game-session-autologin-reset.service` | ubuntu-game-handheld | Resets session to Ubuntu Game Session on every boot |
+| `/etc/systemd/system/hhd@.service` | hhd | HHD daemon (per-user template) |
+| `/etc/polkit-1/rules.d/50-gdm-restart.rules` | ubuntu-game-handheld | Allows GDM restart without password |
+| `/usr/lib/udev/rules.d/83-hhd*.rules` | hhd | HID device access rules for controllers |
+| `/var/lib/ubuntu-game-handheld/` | ubuntu-game-handheld | State directory (holds GDM config backup) |
 
 ### Notable dependencies
 
@@ -166,7 +167,7 @@ The `upstream/hhd-pkg/` directory contains a complete Debian source package for 
 |---|---|
 | `gamescope` | Wayland micro-compositor for the Steam Gamepad UI |
 | `steam` (snap) | Official Valve Steam client (installed via snap) |
-| `hhd` | Handheld Daemon: TDP, controller remapping, fan curves |
+| `hhd` | Handheld Daemon: TDP, controller remapping, fan curves (separate package) |
 | `sxhkd` | Maps hardware volume keys to PipeWire inside Gamescope |
 | `acpi-call-dkms` | Exposes TDP limits via `/proc/acpi/call` |
-| `libhidapi-hidraw0` | Low-level HID access for the HHD Python modules |
+| `libhidapi-hidraw0` | Low-level HID access for HHD (dependency of hhd package) |

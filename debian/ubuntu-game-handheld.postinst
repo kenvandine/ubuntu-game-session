@@ -1,10 +1,11 @@
 #!/bin/bash
-# ubuntu-game-autologin.postinst - Runs as root after package installation.
+# ubuntu-game-handheld.postinst - Runs as root after package installation.
 # Configures GDM autologin, polkit, sudoers, boot session reset service,
-# Handheld Daemon (HHD), and the "Return to Gaming Mode" desktop shortcut.
+# enables the hhd daemon, and installs the "Return to Gaming Mode" shortcut.
+# HHD itself is installed as a package dependency (the hhd package).
 set -e
 
-STATE_DIR=/var/lib/ubuntu-game-autologin
+STATE_DIR=/var/lib/ubuntu-game-handheld
 
 case "$1" in
 configure)
@@ -14,12 +15,12 @@ configure)
         TARGET_USER=$(id -un 1000 2>/dev/null)
     fi
     if [ -z "$TARGET_USER" ]; then
-        echo "ERROR: ubuntu-game-autologin: could not detect the primary user. Aborting." >&2
+        echo "ERROR: ubuntu-game-handheld: could not detect the primary user. Aborting." >&2
         exit 1
     fi
     USER_UID=$(id -u "$TARGET_USER")
     USER_HOME=$(eval echo ~"$TARGET_USER")
-    echo "ubuntu-game-autologin: configuring for user '$TARGET_USER' (uid ${USER_UID})"
+    echo "ubuntu-game-handheld: configuring for user '$TARGET_USER' (uid ${USER_UID})"
 
     # ---- Save originals for clean revert -----------------------------------------
     mkdir -p "$STATE_DIR"
@@ -33,7 +34,7 @@ configure)
     # ---- GDM: automatic & timed login --------------------------------------------
     tee /etc/gdm3/custom.conf > /dev/null << GDMEOF
 # GDM configuration storage
-# Managed by ubuntu-game-autologin package -- remove package to revert
+# Managed by ubuntu-game-handheld package -- remove package to revert
 [daemon]
 AutomaticLoginEnable=True
 AutomaticLogin=${TARGET_USER}
@@ -86,69 +87,12 @@ SVCEOF
     systemctl daemon-reload
     systemctl enable ubuntu-game-session-autologin-reset.service
 
-    # ---- Systemd: HHD service ---------------------------------------------------
-    cat > /etc/systemd/system/hhd@.service << HHDEOF
-[Unit]
-Description=Handheld Daemon (HHD) for %I
-After=network.target network-online.target
-Requires=network-online.target
-
-[Service]
-Type=simple
-ExecStart=/opt/hhd/venv/bin/hhd --user %I
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-HHDEOF
-
-    # ---- HHD: install via pip in isolated venv ----------------------------------
-    mkdir -p /opt/hhd
-    if [ ! -d /opt/hhd/venv ]; then
-        python3 -m venv --system-site-packages /opt/hhd/venv
-    fi
-    /opt/hhd/venv/bin/pip install --quiet --upgrade pip
-    /opt/hhd/venv/bin/pip install --quiet --ignore-installed fasteners python-gettext
-    /opt/hhd/venv/bin/pip install --quiet --upgrade hhd
-
-    # ---- HHD-UI: download AppImage ----------------------------------------------
-    if [ ! -f /opt/hhd/hhd-ui.AppImage ]; then
-        curl -sL \
-            https://github.com/hhd-dev/hhd-ui/releases/latest/download/hhd-ui.AppImage \
-            -o /opt/hhd/hhd-ui.AppImage
-        chmod +x /opt/hhd/hhd-ui.AppImage
-    fi
-
-    # Wrapper to bypass AppArmor namespace restrictions
-    cat > /usr/bin/hhd-ui << 'UIEOF'
-#!/bin/bash
-exec /opt/hhd/hhd-ui.AppImage --no-sandbox "$@"
-UIEOF
-    chmod +x /usr/bin/hhd-ui
-
-    # Symlinks so system can find the binaries naturally
-    ln -sf /opt/hhd/venv/bin/hhd /usr/bin/hhd
-    [ -f /opt/hhd/venv/bin/hhd-overlay ] && \
-        ln -sf /opt/hhd/venv/bin/hhd-overlay /usr/bin/hhd-overlay
-
-    # ---- udev rules for controllers ---------------------------------------------
-    mkdir -p /etc/udev/rules.d/
-    UDEV_BASE=https://raw.githubusercontent.com/hhd-dev/hhd/master/usr/lib/udev/rules.d
-    curl -sL "$UDEV_BASE/83-hhd-user.rules"                -o /etc/udev/rules.d/83-hhd-user.rules
-    curl -sL "$UDEV_BASE/83-hhd.rules"                     -o /etc/udev/rules.d/83-hhd.rules
-    curl -sL "$UDEV_BASE/99-hhd-playstation-touchpad.rules" -o /etc/udev/rules.d/99-hhd-playstation-touchpad.rules
-    udevadm control --reload-rules && udevadm trigger
-
-    mkdir -p /etc/hhd
-    chmod a+rw /etc/hhd
-
-    # ---- Enable HHD for the primary user ----------------------------------------
+    # ---- HHD: add user to required groups and enable the per-user service -------
     usermod -aG input,video "$TARGET_USER" || true
     systemctl daemon-reload
     systemctl enable "hhd@${TARGET_USER}.service"
     systemctl restart "hhd@${TARGET_USER}.service" || \
-        echo "ubuntu-game-autologin: HHD could not start (normal in VM or without handheld device)"
+        echo "ubuntu-game-handheld: HHD could not start (normal in VM or without handheld device)"
 
     # ---- Set AccountsService session to ubuntu-game-session right now -----------
     busctl call org.freedesktop.Accounts \
@@ -172,7 +116,6 @@ DESKEOF
     chmod +x "$USER_HOME/Desktop/Return to Gaming Mode.desktop"
     chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/Desktop/Return to Gaming Mode.desktop"
 
-    # Mark shortcut as trusted so GNOME allows launching it
     su - "$TARGET_USER" -c \
         "gio set \"$USER_HOME/Desktop/Return to Gaming Mode.desktop\" metadata::trusted true" \
         2>/dev/null || true
@@ -183,7 +126,7 @@ DESKEOF
          gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true" \
         2>/dev/null || true
 
-    echo "ubuntu-game-autologin: installation complete. Please reboot to boot into Ubuntu Game Session."
+    echo "ubuntu-game-handheld: installation complete. Please reboot to boot into Ubuntu Game Session."
     ;;
 
 abort-upgrade|abort-remove|abort-deconfigure)

@@ -227,92 +227,29 @@ su - "$TARGET_USER" -c \
 su - "$TARGET_USER" -c "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/${USER_UID}/bus \
     gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true" 2>/dev/null || true
 
-echo "[3/4] Installing Handheld Daemon (HHD) and hhd-overlay..."
-# Setup an isolated venv in /opt/hhd
-mkdir -p /opt/hhd
-cd /opt/hhd
-
-if [ ! -d "/opt/hhd/venv" ]; then
-    # Use --system-site-packages so python3-gi and other system GTK bindings
-    # are available without requiring compilation from source.
-    python3 -m venv --system-site-packages venv
-fi
-
-# Activate venv and install
-source venv/bin/activate
-pip install --upgrade pip
-
-# We install hhd directly inside the virtual environment.
-# Using pip within an isolated /opt/hhd directory fulfills the requirement
-# of avoiding pipx globally while still cleanly installing python binaries.
-echo "Installing hhd via pip inside /opt/hhd/venv..."
-# Also install fasteners and python-gettext to satisfy any broken constraints from 
-# pre-existing packages (like duplicity) on specialized or Live USB environments.
-# Using --ignore-installed bypasses the system's incompatible versions completely.
-pip install --ignore-installed fasteners python-gettext
-pip install --upgrade hhd
-
-# Download the standalone HHD-UI AppImage since it is not a Python project
-echo "Downloading HHD-UI AppImage..."
-curl -sL https://github.com/hhd-dev/hhd-ui/releases/latest/download/hhd-ui.AppImage -o /opt/hhd/hhd-ui.AppImage
-chmod +x /opt/hhd/hhd-ui.AppImage
-
-# Create a robust wrapper to bypass Ubuntu 24.04+ AppArmor namespace restrictions (still needed on 26.04)
-cat << 'EOF' > /usr/bin/hhd-ui
-#!/bin/bash
-exec /opt/hhd/hhd-ui.AppImage --no-sandbox "$@"
-EOF
-chmod +x /usr/bin/hhd-ui
-
-# Create symbolic links to /usr/bin so the system can run them naturally
-ln -sf /opt/hhd/venv/bin/hhd /usr/bin/hhd
-if [ -f /opt/hhd/venv/bin/hhd-overlay ]; then
-    ln -sf /opt/hhd/venv/bin/hhd-overlay /usr/bin/hhd-overlay
+echo "[3/4] Installing Handheld Daemon (HHD)..."
+# Install hhd and its Python dependencies from apt (Ubuntu universe).
+# If hhd is not yet in universe, install from pip as a fallback.
+if apt-get install -y hhd 2>/dev/null; then
+    echo "hhd installed via apt."
+else
+    echo "hhd not found in apt repositories; installing via pip..."
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        python3-evdev python3-yaml python3-rich python3-xlib \
+        python3-serial python3-pyroute2 python3-gi python3-dbus \
+        python3-setuptools libhidapi-hidraw0
+    pip3 install --break-system-packages hhd
 fi
 
 echo "[4/4] Configuring Udev Rules and Systemd Services for HHD..."
-# HHD needs to run as the primary user to manage controllers via the user session.
-# We must install the official HHD udev rules so the user has permission to read the controllers.
-mkdir -p /etc/udev/rules.d/
-curl -sL https://raw.githubusercontent.com/hhd-dev/hhd/master/usr/lib/udev/rules.d/83-hhd-user.rules -o /etc/udev/rules.d/83-hhd-user.rules
-curl -sL https://raw.githubusercontent.com/hhd-dev/hhd/master/usr/lib/udev/rules.d/83-hhd.rules -o /etc/udev/rules.d/83-hhd.rules
-curl -sL https://raw.githubusercontent.com/hhd-dev/hhd/master/usr/lib/udev/rules.d/99-hhd-playstation-touchpad.rules -o /etc/udev/rules.d/99-hhd-playstation-touchpad.rules
-udevadm control --reload-rules && udevadm trigger
-
-# Create the global HHD configuration directory so the user daemon doesn't crash trying to write to /etc
-mkdir -p /etc/hhd
-chmod a+rw /etc/hhd
-
-mkdir -p /etc/systemd/system
-
-# HHD System Service
-cat << 'EOF' > /etc/systemd/system/hhd@.service
-[Unit]
-Description=Handheld Daemon (HHD) for %I
-After=network.target network-online.target systemd-sleep.service
-Requires=network-online.target
-
-[Service]
-Type=simple
-ExecStart=/opt/hhd/venv/bin/hhd --user %I
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Provide standard udev rules for controllers
-# HHD automatically applies udev rules when it runs, but we ensure the current user
-# is in the requisite groups just in case.
+# Add user to required groups for HID device access
 if [ -n "$TARGET_USER" ]; then
     echo "Enabling hhd service for user: $TARGET_USER"
     usermod -aG input,video "$TARGET_USER" || true
-    systemctl enable hhd@$TARGET_USER.service
-    
-    # Enable the service directly by reloading systemd
     systemctl daemon-reload
-    systemctl restart hhd@$TARGET_USER.service || echo "Warning: HHD could not start (normal if no handheld device is detected or if running in VM)"
+    systemctl enable hhd@$TARGET_USER.service
+    systemctl restart hhd@$TARGET_USER.service || \
+        echo "Warning: HHD could not start (normal if no handheld device is detected or if running in VM)"
 else
     echo "Could not detect standard user. To enable HHD on boot, run: sudo systemctl enable hhd@<your_username>"
 fi

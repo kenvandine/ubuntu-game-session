@@ -89,19 +89,11 @@ else
     exit 1
 fi
 
-# Verify HHD execution (this hits pip/venv isolation check)
+# Verify HHD binary is available (installed as a package dependency)
 if multipass exec "$VM_NAME" -- /usr/bin/hhd --help > /dev/null 2>&1; then
-    echo " [OK] HHD binary executes properly inside isolated venv."
+    echo " [OK] HHD binary executes properly."
 else
-    echo " [FAIL] HHD binary failed to execute. Venv broken!"
-    exit 1
-fi
-
-# Verify GUI AppImage Sandbox
-if multipass exec "$VM_NAME" -- /usr/bin/hhd-ui --appimage-extract-and-run --help > /dev/null 2>&1 || true; then
-    echo " [OK] HHD-UI AppImage wrapper works without namespace crashes."
-else
-    echo " [FAIL] AppImage wrapper crashed!"
+    echo " [FAIL] HHD binary failed to execute!"
     exit 1
 fi
 
@@ -114,22 +106,7 @@ else
 fi
 
 echo "[6/7] Testing Package Removal (Configuration Reversion) ..."
-# Wait for the asynchronous background steam-launcher installation (launched in postinst) to finish.
-# We do this by explicitly waiting for the steam-launcher package to become installed,
-# which guarantees the background apt-get process has reached its payload.
-multipass exec "$VM_NAME" -- sudo bash -c '
-    echo "Waiting for background Steam installer service to complete..."
-    while ! dpkg -s steam-launcher >/dev/null 2>&1; do
-        sleep 5
-    done
-    # Now that it is installed, wait for any lingering dpkg locks to clear as it finishes up
-    while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/dpkg/lock >/dev/null 2>&1; do
-        echo "Waiting for dpkg locks to release..."
-        sleep 3
-    done
-    echo "All clear."
-'
-multipass exec "$VM_NAME" -- sudo apt-get remove -y udeck
+multipass exec "$VM_NAME" -- sudo apt-get remove -y ubuntu-game-handheld
 
 # Verify GDM Config reverted
 if multipass exec "$VM_NAME" -- grep -q "AutomaticLoginEnable=True" /etc/gdm3/custom.conf; then
@@ -148,15 +125,11 @@ else
 fi
 
 echo "[7/7] Testing Package Purge (System Sanitation) ..."
-multipass exec "$VM_NAME" -- sudo apt-get purge -y udeck
+multipass exec "$VM_NAME" -- sudo apt-get purge -y ubuntu-game-handheld
 
-# Verify total isolation cleanup
-if multipass exec "$VM_NAME" -- stat /opt/hhd > /dev/null 2>&1; then
-    echo " [FAIL] /opt/hhd was not purged!"
-    exit 1
-fi
-if multipass exec "$VM_NAME" -- stat /var/lib/udeck > /dev/null 2>&1; then
-    echo " [FAIL] /var/lib/udeck state dir was not purged!"
+# Verify state directory cleanup
+if multipass exec "$VM_NAME" -- stat /var/lib/ubuntu-game-handheld > /dev/null 2>&1; then
+    echo " [FAIL] /var/lib/ubuntu-game-handheld state dir was not purged!"
     exit 1
 fi
 echo " [OK] Post-purge directories completely wiped."
