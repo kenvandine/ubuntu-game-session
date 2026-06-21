@@ -1,0 +1,30 @@
+Package: ubuntu-game-launcher
+Source: ubuntu-game-session
+Version: 0.7
+Architecture: all
+Maintainer: Ken VanDine <ken.vandine@canonical.com>
+Installed-Size: 17
+Depends: ubuntu-game-session, gamemode, mangohud
+Conflicts: ubuntu-game-desktop
+Replaces: ubuntu-game-desktop
+Section: misc
+Priority: optional
+Description: Gaming launchers and helpers for the GNOME desktop
+ Adds gaming enhancements to the regular Ubuntu GNOME desktop instead of
+ shipping a separate compositor or session. Use GNOME for everything (Settings,
+ network, audio, power, the app grid) and reach for gamescope only where it
+ helps.
+ .
+ Provides:
+  - GameMode (always-on CPU/GPU tuning while a game runs — a near-free win)
+  - MangoHud (opt-in FPS / frametime / temperature overlay)
+  - ubuntu-game-run: a composable wrapper that adds GameMode, and optionally
+    MangoHud and nested gamescope, around any command. Use it as a Steam
+    per-game launch-option prefix: "ubuntu-game-run -- %command%"
+  - a "Steam (Gamescope)" application entry that launches the whole Steam
+    client inside nested gamescope so every game inherits FSR upscaling,
+    frame pacing, and the MangoHud overlay
+ .
+ For the maximum-framerate console experience (gamescope owning the display
+ with no desktop compositor underneath) use the ubuntu-game-session kiosk,
+ which this package depends on and which also installs the Steam snap.

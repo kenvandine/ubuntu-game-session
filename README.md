@@ -53,6 +53,69 @@ After booting into the Gamepad UI:
 
 ## 2. How-To Guides
 
+### How to add gaming enhancements to the GNOME desktop
+
+On a full Ubuntu desktop or laptop you want the real GNOME experience, not a
+cut-down compositor. Gamescope cannot host GNOME — it is a single-app
+micro-compositor — but it can run *nested per game* inside a GNOME Wayland
+session. The `ubuntu-game-launcher` package layers gaming tooling onto stock
+GNOME instead of replacing it:
+
+```bash
+sudo apt install ../ubuntu-game-launcher_0.7_all.deb
+```
+
+This pulls in `gamemode` and `mangohud`, and (via `ubuntu-game-session`)
+`gamescope` and the Steam snap. You keep using GNOME for everything; gaming
+extras are additive:
+
+- **GameMode** runs automatically while a game is active — a near-free CPU/GPU
+  tuning win that applies to every game.
+- **Steam (Gamescope)** appears in the app grid. It launches the whole Steam
+  client inside nested gamescope, so every game Steam starts inherits FSR
+  upscaling and frame pacing.
+- **`ubuntu-game-run`** is a wrapper you can use as a Steam per-game launch
+  option for finer control:
+
+  ```
+  ubuntu-game-run -- %command%                 # GameMode only (recommended)
+  ubuntu-game-run --mangohud -- %command%      # + FPS/frametime overlay
+  ubuntu-game-run --gamescope -- %command%     # + nested gamescope
+  ubuntu-game-run --gamescope='-W 1920 -H 1080 -F fsr' -- %command%
+  ```
+
+  Its `--mangohud` flag uses the host `mangohud` wrapper, which works for
+  **native and Flatpak** games. It does **not** reach the Steam snap (see
+  below).
+
+### How to enable the MangoHud overlay
+
+MangoHud only draws on a running game — never on the Steam library or Big
+Picture UI, so launch an actual game before pressing the toggle (default
+**Right Shift + F12**).
+
+The Steam client here is a **snap**, and the host `mangohud` package cannot
+cross into the snap sandbox. The Steam snap bundles its own MangoHud, so the
+reliable way to enable it is **per game**, via Steam launch options:
+
+```
+mangohud %command%                       # FPS overlay
+mangohud gamescope -f -- %command%       # overlay + nested gamescope
+```
+
+Right-click the game → **Properties → Launch Options** and paste one of the
+above. For native or Flatpak games (not the Steam snap), `ubuntu-game-run
+--mangohud -- …` works too.
+
+**Performance note:** on modern Mutter (GNOME 46+) fullscreen unredirect,
+direct scanout, and VRR already remove most compositor overhead, so nested
+gamescope is *not* a blanket speedup — at native resolution it can cost a few
+percent. Its wins are FSR upscaling, frame pacing/limiting, lower-latency
+compositing, and HDR. Use GameMode everywhere, opt into gamescope where it
+helps, and for the absolute-maximum-framerate console experience switch to the
+dedicated **Ubuntu Game Session** (gamescope owning the display, no GNOME
+underneath).
+
 ### How to switch to the Ubuntu desktop
 
 From the Steam Gamepad UI:
@@ -155,6 +218,8 @@ The `upstream/hhd-pkg/` directory contains a complete Debian source package for 
 | `/usr/bin/ubuntu-game-session` | ubuntu-game-session | Gamescope + Steam launcher wrapper |
 | `/usr/bin/ubuntu-game-session-select` | ubuntu-game-session | Steam "Switch to Desktop" hook |
 | `/usr/share/wayland-sessions/ubuntu-game-session.desktop` | ubuntu-game-session | GDM session entry |
+| `/usr/bin/ubuntu-game-run` | ubuntu-game-launcher | GameMode/MangoHud/gamescope wrapper for GNOME |
+| `/usr/share/applications/steam-gamescope.desktop` | ubuntu-game-launcher | "Steam (Gamescope)" app-grid entry |
 | `/etc/systemd/system/ubuntu-game-session-autologin-reset.service` | ubuntu-game-handheld | Resets session to Ubuntu Game Session on every boot |
 | `/etc/systemd/system/hhd@.service` | hhd | HHD daemon (per-user template) |
 | `/etc/polkit-1/rules.d/50-gdm-restart.rules` | ubuntu-game-handheld | Allows GDM restart without password |
@@ -165,7 +230,9 @@ The `upstream/hhd-pkg/` directory contains a complete Debian source package for 
 
 | Package | Role |
 |---|---|
-| `gamescope` | Wayland micro-compositor for the Steam Gamepad UI |
+| `gamescope` | Wayland micro-compositor for the Steam Gamepad UI (and nested per-game on the GNOME desktop) |
+| `gamemode` | Feral GameMode: CPU/GPU tuning while a game runs (ubuntu-game-launcher) |
+| `mangohud` | In-game FPS/frametime/temperature overlay (ubuntu-game-launcher) |
 | `steam` (snap) | Official Valve Steam client (installed via snap) |
 | `hhd` | Handheld Daemon: TDP, controller remapping, fan curves (separate package) |
 | `sxhkd` | Maps hardware volume keys to PipeWire inside Gamescope |

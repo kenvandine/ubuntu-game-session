@@ -1,5 +1,0 @@
-src/usr/bin/ubuntu-game-desktop usr/bin
-src/usr/bin/ubuntu-game-launcher usr/bin
-src/usr/bin/ubuntu-game-power-menu usr/bin
-src/usr/share/wayland-sessions/ubuntu-game-desktop.desktop usr/share/wayland-sessions
-src/usr/share/ubuntu-game-desktop usr/share

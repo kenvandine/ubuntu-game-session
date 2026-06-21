@@ -1,0 +1,92 @@
+#!/bin/bash
+# ubuntu-game-run - Run a game with gaming enhancements on the GNOME desktop.
+#
+# Composes GameMode (always, unless --no-gamemode), MangoHud (opt-in), and
+# nested gamescope (opt-in) around a command. Designed as both the Exec for the
+# "Steam (Gamescope)" launcher and a prefix for Steam per-game launch options:
+#
+#   ubuntu-game-run -- %command%                  # GameMode only (recommended)
+#   ubuntu-game-run --mangohud -- %command%       # + FPS/frametime overlay
+#   ubuntu-game-run --gamescope -- %command%      # + nested gamescope
+#   ubuntu-game-run --gamescope='-W 1920 -H 1080 -F fsr' -- %command%
+#
+# Performance note: GameMode is a near-free win and applies to every game.
+# Nested gamescope adds a compositor layer (a few % cost at native resolution)
+# but enables FSR upscaling, frame pacing, and HDR — opt in where it helps. For
+# maximum framerate use the dedicated "Ubuntu Game Session" gamescope kiosk.
+
+set -euo pipefail
+
+# Ensure the Steam snap (and other snaps) resolve on PATH.
+case ":$PATH:" in
+    *:/snap/bin:*) ;;
+    *) PATH="$PATH:/snap/bin" ;;
+esac
+export PATH
+
+use_gamemode=1
+use_mangohud=0
+use_gamescope=0
+gamescope_opts="-f"
+
+usage() {
+    cat >&2 <<'EOF'
+Usage: ubuntu-game-run [OPTIONS] -- COMMAND [ARGS...]
+
+Options:
+  --gamescope[=OPTS]  Run COMMAND inside nested gamescope. Optional OPTS replace
+                      the default gamescope flags ("-f"). Example:
+                      --gamescope='-W 1920 -H 1080 -F fsr'
+  --mangohud          Show the MangoHud performance overlay.
+  --no-gamemode       Do not wrap in gamemoderun (on by default).
+  -h, --help          Show this help.
+EOF
+}
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --gamescope)   use_gamescope=1 ;;
+        --gamescope=*) use_gamescope=1; gamescope_opts="${1#*=}" ;;
+        --mangohud)    use_mangohud=1 ;;
+        --no-gamemode) use_gamemode=0 ;;
+        -h|--help)     usage; exit 0 ;;
+        --)            shift; break ;;
+        *)             echo "ubuntu-game-run: unknown option '$1'" >&2; usage; exit 2 ;;
+    esac
+    shift
+done
+
+if [ $# -eq 0 ]; then
+    echo "ubuntu-game-run: no command given" >&2
+    usage
+    exit 2
+fi
+
+cmd=("$@")
+
+# MangoHud (opt-in). Use the `mangohud` wrapper, which sets up the LD_PRELOAD
+# shim and works for both Vulkan and OpenGL. It wraps the game directly, so it
+# goes inside any gamescope layer. NOTE: this only reaches commands that run on
+# the host (native or Flatpak games). For the Steam *snap* the host MangoHud
+# cannot cross into the sandbox — enable it per game via Steam launch options
+# instead: `mangohud %command%`.
+if [ "$use_mangohud" -eq 1 ]; then
+    if command -v mangohud >/dev/null 2>&1; then
+        cmd=(mangohud "${cmd[@]}")
+    else
+        export MANGOHUD=1
+    fi
+fi
+
+# Nested gamescope (opt-in). gamescope_opts is intentionally word-split.
+if [ "$use_gamescope" -eq 1 ]; then
+    # shellcheck disable=SC2206
+    cmd=(gamescope $gamescope_opts -- "${cmd[@]}")
+fi
+
+# GameMode wraps the outermost command unless disabled.
+if [ "$use_gamemode" -eq 1 ] && command -v gamemoderun >/dev/null 2>&1; then
+    cmd=(gamemoderun "${cmd[@]}")
+fi
+
+exec "${cmd[@]}"

@@ -1,6 +1,0 @@
-[Desktop Entry]
-Name=Ubuntu Gaming Desktop
-Comment=Lightweight Wayland desktop for gaming (labwc + waybar + wofi)
-Exec=/usr/bin/ubuntu-game-desktop
-Type=Application
-DesktopNames=ubuntu-game-desktop

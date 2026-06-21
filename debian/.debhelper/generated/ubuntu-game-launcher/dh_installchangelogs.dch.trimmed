@@ -1,3 +1,33 @@
+ubuntu-game-session (0.7) resolute; urgency=medium
+
+  * Replace the ubuntu-game-desktop session with a new ubuntu-game-launcher
+    package. On a full Ubuntu system the desktop experience is now the real
+    GNOME session; gamescope was never able to host GNOME, only to run nested
+    per-game, so the custom labwc + waybar + wofi mini-desktop is dropped in
+    favour of layering gaming tooling onto GNOME.
+    - Drop deps labwc, waybar, wofi, swaybg, network-manager-gnome, fonts-noto;
+      remove the labwc/waybar/wofi configs, the wofi launcher, power menu, and
+      the ubuntu-game-desktop wayland session entry.
+    - Depend on ubuntu-game-session (brings gamescope and installs the Steam
+      snap via its postinst), gamemode, and mangohud. Replaces/Conflicts the
+      old ubuntu-game-desktop package for clean upgrades.
+    - Add /usr/bin/ubuntu-game-run: a composable wrapper that always applies
+      GameMode and optionally MangoHud (--mangohud) and nested gamescope
+      (--gamescope[=OPTS]). Recommended as a Steam per-game launch-option
+      prefix: "ubuntu-game-run -- %command%". --mangohud uses the host
+      "mangohud" wrapper (LD_PRELOAD), which works for native and Flatpak
+      games; the host MangoHud cannot reach the confined Steam snap.
+    - Add a "Steam (Gamescope)" application entry that runs the whole Steam
+      client inside nested gamescope so every game inherits FSR/frame-pacing.
+      MangoHud for snap games is enabled per game via Steam launch options
+      ("mangohud %command%"), documented in the README, since host MangoHud
+      cannot cross the snap sandbox.
+  * No change to ubuntu-game-session (gamescope + Steam Big Picture kiosk) or
+    ubuntu-game-handheld (autologin into Big Picture); the handheld experience
+    is unaffected.
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Sun, 21 Jun 2026 18:00:00 -0400
+
 ubuntu-game-session (0.6) resolute; urgency=medium
 
   * ubuntu-game-desktop: improve launcher discoverability — label the waybar

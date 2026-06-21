@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Steam (Gamescope)
+Comment=Launch Steam inside gamescope so all games get FSR/frame-pacing. For the MangoHud overlay set "mangohud %command%" in a game's Steam launch options.
+Exec=ubuntu-game-run --gamescope -- steam
+Icon=steam
+Terminal=false
+Categories=Game;
+Keywords=steam;gamescope;gaming;

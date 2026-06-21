@@ -22,32 +22,33 @@ Description: Ubuntu Game Session (Steam OS-like gaming experience)
  Install ubuntu-game-handheld for the full handheld console-mode experience
  with automatic boot into gaming mode.
 
-Package: ubuntu-game-desktop
+Package: ubuntu-game-launcher
 Architecture: all
-Depends: labwc,
-         waybar,
-         wofi,
-         swaybg,
-         network-manager-gnome,
-         fonts-noto,
-         libnotify-bin,
+Depends: ubuntu-game-session,
+         gamemode,
+         mangohud,
          ${misc:Depends}
-Description: Ubuntu Gaming Desktop Session
- A lightweight Wayland desktop session (labwc + waybar + wofi) optimised for
- gaming on Ubuntu desktops and laptops. Games are launched via per-game
- gamescope wrappers, gaining frame-timing, upscaling, and HDR benefits without
- requiring a gamescope kiosk session.
+Replaces: ubuntu-game-desktop
+Conflicts: ubuntu-game-desktop
+Description: Gaming launchers and helpers for the GNOME desktop
+ Adds gaming enhancements to the regular Ubuntu GNOME desktop instead of
+ shipping a separate compositor or session. Use GNOME for everything (Settings,
+ network, audio, power, the app grid) and reach for gamescope only where it
+ helps.
  .
  Provides:
-  - labwc floating Wayland compositor with keyboard shortcuts
-  - waybar panel with app launcher, clock, Wi-Fi status and connection editor,
-    battery indicator, and logout / reboot / shut-down buttons
-  - wofi application launcher populated from installed .desktop files
-  - nm-applet system-tray icon for network management
+  - GameMode (always-on CPU/GPU tuning while a game runs — a near-free win)
+  - MangoHud (opt-in FPS / frametime / temperature overlay)
+  - ubuntu-game-run: a composable wrapper that adds GameMode, and optionally
+    MangoHud and nested gamescope, around any command. Use it as a Steam
+    per-game launch-option prefix: "ubuntu-game-run -- %command%"
+  - a "Steam (Gamescope)" application entry that launches the whole Steam
+    client inside nested gamescope so every game inherits FSR upscaling,
+    frame pacing, and the MangoHud overlay
  .
- Unlike ubuntu-game-session (which runs Steam full-screen via gamescope),
- this session is a conventional windowed desktop suitable for desktops and
- laptops where a keyboard and pointer are available.
+ For the maximum-framerate console experience (gamescope owning the display
+ with no desktop compositor underneath) use the ubuntu-game-session kiosk,
+ which this package depends on and which also installs the Steam snap.
 
 Package: ubuntu-game-handheld
 Architecture: all
