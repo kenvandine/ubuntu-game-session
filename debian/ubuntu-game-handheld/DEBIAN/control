@@ -1,0 +1,22 @@
+Package: ubuntu-game-handheld
+Source: ubuntu-game-session
+Version: 0.4
+Architecture: all
+Maintainer: Ken VanDine <ken.vandine@canonical.com>
+Installed-Size: 18
+Depends: ubuntu-game-session, hhd, acpi-call-dkms
+Section: misc
+Priority: optional
+Description: Ubuntu Game Session autologin for handheld gaming PCs
+ Configures GDM to automatically log in to Ubuntu Game Session on every boot,
+ suitable for handheld gaming PCs (Lenovo Legion Go, Steam Deck, and similar).
+ .
+ Installs and configures:
+  - GDM autologin into Ubuntu Game Session on every boot
+  - Handheld Daemon (HHD) for TDP and controller management
+  - HHD overlay for in-game quick access
+  - Seamless switching between Ubuntu Game Session and Ubuntu desktop
+  - Virtual keyboard for touchscreen / handheld input
+ .
+ Depends on ubuntu-game-session and hhd. Remove the package to fully revert
+ to original Ubuntu behaviour.

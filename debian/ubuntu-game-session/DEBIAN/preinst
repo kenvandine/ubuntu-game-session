@@ -1,0 +1,12 @@
+#!/bin/bash
+# ubuntu-game-session.preinst - Runs as root before dpkg unpacks the package.
+set -e
+
+case "$1" in
+install|upgrade)
+    # Ensure snapd is running before postinst tries to install the steam snap
+    systemctl start snapd.service snapd.socket 2>/dev/null || true
+    ;;
+esac
+
+exit 0

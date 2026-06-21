@@ -1,0 +1,26 @@
+#!/bin/bash
+# ubuntu-game-session.postinst - Runs as root after package installation.
+# Installs Steam via snap.
+set -e
+
+case "$1" in
+configure)
+    if ! snap list steam >/dev/null 2>&1; then
+        echo "ubuntu-game-session: installing Steam snap..."
+        snap install steam
+    else
+        echo "ubuntu-game-session: Steam snap already installed."
+    fi
+    echo "ubuntu-game-session: installed. Select 'Ubuntu Game Session' at the GDM login screen."
+    ;;
+
+abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+*)
+    echo "postinst called with unknown argument: '$1'" >&2
+    exit 1
+    ;;
+esac
+
+exit 0

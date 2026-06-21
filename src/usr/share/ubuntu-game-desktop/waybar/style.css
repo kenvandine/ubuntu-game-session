@@ -1,0 +1,107 @@
+* {
+    font-family: "Noto Sans", sans-serif;
+    font-size: 13px;
+    min-height: 0;
+    border: none;
+    border-radius: 0;
+}
+
+window#waybar {
+    background: rgba(20, 20, 30, 0.95);
+    color: #cdd6f4;
+    border-bottom: 1px solid rgba(110, 115, 141, 0.3);
+}
+
+/* ── Left ───────────────────────────────────────────── */
+
+#custom-launcher {
+    font-size: 20px;
+    padding: 0 14px;
+    color: #89b4fa;
+}
+
+#custom-launcher:hover {
+    background: rgba(137, 180, 250, 0.15);
+}
+
+#taskbar button {
+    padding: 0 8px;
+    color: #a6adc8;
+    background: transparent;
+}
+
+#taskbar button.active {
+    color: #cdd6f4;
+    border-bottom: 2px solid #89b4fa;
+}
+
+#taskbar button:hover {
+    background: rgba(205, 214, 244, 0.1);
+}
+
+/* ── Centre ─────────────────────────────────────────── */
+
+#clock {
+    padding: 0 16px;
+    font-weight: bold;
+    color: #cdd6f4;
+}
+
+/* ── Right ──────────────────────────────────────────── */
+
+#network {
+    padding: 0 12px;
+    color: #a6e3a1;
+}
+
+#network.disconnected {
+    color: #f38ba8;
+}
+
+#battery {
+    padding: 0 12px;
+    color: #a6e3a1;
+}
+
+#battery.warning {
+    color: #f9e2af;
+}
+
+#battery.critical {
+    color: #f38ba8;
+    animation: blink 0.5s step-start infinite;
+}
+
+@keyframes blink {
+    to { color: #cdd6f4; }
+}
+
+#custom-logout {
+    padding: 0 10px;
+    font-size: 16px;
+    color: #89dceb;
+}
+
+#custom-logout:hover {
+    background: rgba(137, 220, 235, 0.15);
+}
+
+#custom-reboot {
+    padding: 0 10px;
+    font-size: 16px;
+    color: #f9e2af;
+}
+
+#custom-reboot:hover {
+    background: rgba(249, 226, 175, 0.15);
+}
+
+#custom-shutdown {
+    padding: 0 10px;
+    font-size: 16px;
+    color: #f38ba8;
+}
+
+#custom-shutdown:hover {
+    background: rgba(243, 139, 168, 0.15);
+}

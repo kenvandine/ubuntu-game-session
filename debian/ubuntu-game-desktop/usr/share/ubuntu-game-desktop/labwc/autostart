@@ -1,0 +1,4 @@
+#!/bin/bash
+# labwc autostart — launched by labwc on session start
+waybar &
+nm-applet --indicator &

@@ -22,6 +22,31 @@ Description: Ubuntu Game Session (Steam OS-like gaming experience)
  Install ubuntu-game-handheld for the full handheld console-mode experience
  with automatic boot into gaming mode.
 
+Package: ubuntu-game-desktop
+Architecture: all
+Depends: labwc,
+         waybar,
+         wofi,
+         network-manager-gnome,
+         fonts-noto,
+         ${misc:Depends}
+Description: Ubuntu Gaming Desktop Session
+ A lightweight Wayland desktop session (labwc + waybar + wofi) optimised for
+ gaming on Ubuntu desktops and laptops. Games are launched via per-game
+ gamescope wrappers, gaining frame-timing, upscaling, and HDR benefits without
+ requiring a gamescope kiosk session.
+ .
+ Provides:
+  - labwc floating Wayland compositor with keyboard shortcuts
+  - waybar panel with app launcher, clock, Wi-Fi status and connection editor,
+    battery indicator, and logout / reboot / shut-down buttons
+  - wofi application launcher populated from installed .desktop files
+  - nm-applet system-tray icon for network management
+ .
+ Unlike ubuntu-game-session (which runs Steam full-screen via gamescope),
+ this session is a conventional windowed desktop suitable for desktops and
+ laptops where a keyboard and pointer are available.
+
 Package: ubuntu-game-handheld
 Architecture: all
 Depends: ubuntu-game-session,

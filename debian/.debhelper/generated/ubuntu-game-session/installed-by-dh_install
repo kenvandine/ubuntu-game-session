@@ -1,0 +1,3 @@
+./src/usr/bin/ubuntu-game-session
+./src/usr/bin/ubuntu-game-session-select
+./src/usr/share/wayland-sessions/ubuntu-game-session.desktop

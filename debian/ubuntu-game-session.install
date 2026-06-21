@@ -1,3 +1,4 @@
 
-src/usr/bin/* usr/bin
-src/usr/share/wayland-sessions/* usr/share/wayland-sessions
+src/usr/bin/ubuntu-game-session usr/bin
+src/usr/bin/ubuntu-game-session-select usr/bin
+src/usr/share/wayland-sessions/ubuntu-game-session.desktop usr/share/wayland-sessions

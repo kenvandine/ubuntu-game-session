@@ -1,0 +1,59 @@
+#!/bin/bash
+# ubuntu-game-handheld.postrm - Runs as root on package removal/purge.
+# Reverts GDM autologin config, removes the boot session reset service,
+# polkit rule, and sudoers entry. HHD and udev rules are managed by the
+# hhd package and are not touched here.
+set -e
+
+STATE_DIR=/var/lib/ubuntu-game-handheld
+
+case "$1" in
+remove|purge|failed-upgrade|abort-install|abort-upgrade|disappear)
+
+    echo "ubuntu-game-handheld: reverting configuration changes..."
+
+    # ---- Restore original GDM config --------------------------------------------
+    if [ -f "$STATE_DIR/gdm3-custom.conf.orig" ]; then
+        cp "$STATE_DIR/gdm3-custom.conf.orig" /etc/gdm3/custom.conf
+        echo "ubuntu-game-handheld: /etc/gdm3/custom.conf restored"
+    fi
+
+    # ---- Disable and remove the boot session reset service ----------------------
+    TARGET_USER=""
+    [ -f "$STATE_DIR/target_user" ] && TARGET_USER=$(cat "$STATE_DIR/target_user")
+
+    if [ -n "$TARGET_USER" ]; then
+        systemctl disable --now "hhd@${TARGET_USER}.service" 2>/dev/null || true
+    fi
+    systemctl disable --now ubuntu-game-session-autologin-reset.service 2>/dev/null || true
+    rm -f /etc/systemd/system/ubuntu-game-session-autologin-reset.service
+    systemctl daemon-reload
+
+    # ---- Remove polkit rule -----------------------------------------------------
+    rm -f /etc/polkit-1/rules.d/50-gdm-restart.rules
+
+    # ---- Remove sudoers entry ---------------------------------------------------
+    rm -f /etc/sudoers.d/ubuntu-game-session-switch
+
+    echo "ubuntu-game-handheld: reverted. Reboot to return to standard Ubuntu behaviour."
+    ;;
+esac
+
+# ---- Purge: remove state directory and desktop shortcut -----------------------
+if [ "$1" = "purge" ]; then
+    echo "ubuntu-game-handheld: purging all data..."
+
+    TARGET_USER=""
+    [ -f "$STATE_DIR/target_user" ] && TARGET_USER=$(cat "$STATE_DIR/target_user")
+
+    if [ -n "$TARGET_USER" ]; then
+        USER_HOME=$(eval echo ~"$TARGET_USER")
+        rm -f "$USER_HOME/Desktop/Return to Gaming Mode.desktop"
+    fi
+
+    rm -rf "$STATE_DIR"
+
+    echo "ubuntu-game-handheld: purge complete."
+fi
+
+exit 0

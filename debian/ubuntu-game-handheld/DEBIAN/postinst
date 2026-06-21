@@ -1,0 +1,141 @@
+#!/bin/bash
+# ubuntu-game-handheld.postinst - Runs as root after package installation.
+# Configures GDM autologin, polkit, sudoers, boot session reset service,
+# enables the hhd daemon, and installs the "Return to Gaming Mode" shortcut.
+# HHD itself is installed as a package dependency (the hhd package).
+set -e
+
+STATE_DIR=/var/lib/ubuntu-game-handheld
+
+case "$1" in
+configure)
+    # ---- Detect the primary non-root user ----------------------------------------
+    TARGET_USER=${SUDO_USER:-$(logname 2>/dev/null || echo "")}
+    if [ -z "$TARGET_USER" ] || [ "$TARGET_USER" = "root" ]; then
+        TARGET_USER=$(id -un 1000 2>/dev/null)
+    fi
+    if [ -z "$TARGET_USER" ]; then
+        echo "ERROR: ubuntu-game-handheld: could not detect the primary user. Aborting." >&2
+        exit 1
+    fi
+    USER_UID=$(id -u "$TARGET_USER")
+    USER_HOME=$(eval echo ~"$TARGET_USER")
+    echo "ubuntu-game-handheld: configuring for user '$TARGET_USER' (uid ${USER_UID})"
+
+    # ---- Save originals for clean revert -----------------------------------------
+    mkdir -p "$STATE_DIR"
+    echo "$TARGET_USER" > "$STATE_DIR/target_user"
+    echo "$USER_UID"    > "$STATE_DIR/target_uid"
+
+    if [ ! -f "$STATE_DIR/gdm3-custom.conf.orig" ]; then
+        cp /etc/gdm3/custom.conf "$STATE_DIR/gdm3-custom.conf.orig"
+    fi
+
+    # ---- GDM: automatic & timed login --------------------------------------------
+    tee /etc/gdm3/custom.conf > /dev/null << GDMEOF
+# GDM configuration storage
+# Managed by ubuntu-game-handheld package -- remove package to revert
+[daemon]
+AutomaticLoginEnable=True
+AutomaticLogin=${TARGET_USER}
+TimedLoginEnable=True
+TimedLogin=${TARGET_USER}
+TimedLoginDelay=3
+
+[security]
+
+[xdmcp]
+
+[chooser]
+
+[debug]
+GDMEOF
+
+    # ---- Polkit: allow user to restart gdm3 without password --------------------
+    mkdir -p /etc/polkit-1/rules.d
+    cat > /etc/polkit-1/rules.d/50-gdm-restart.rules << POLKITEOF
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.systemd1.manage-units" &&
+        (action.lookup("unit") == "gdm3.service" || action.lookup("unit") == "gdm.service") &&
+        action.lookup("verb") == "restart" &&
+        subject.user == "${TARGET_USER}") {
+        return polkit.Result.YES;
+    }
+});
+POLKITEOF
+
+    # ---- Sudoers: legacy fallback for systemctl restart -------------------------
+    printf '%s ALL=(ALL) NOPASSWD: /bin/systemctl restart gdm3, /bin/systemctl restart gdm\n' \
+        "${TARGET_USER}" > /etc/sudoers.d/ubuntu-game-session-switch
+    chmod 0440 /etc/sudoers.d/ubuntu-game-session-switch
+
+    # ---- Systemd: boot session reset service ------------------------------------
+    cat > /etc/systemd/system/ubuntu-game-session-autologin-reset.service << SVCEOF
+[Unit]
+Description=Reset Default Session to Ubuntu Game Session on Boot
+After=accounts-daemon.service
+Before=gdm.service gdm3.service display-manager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User${USER_UID} org.freedesktop.Accounts.User SetXSession s ubuntu-game-session
+ExecStart=/usr/bin/busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User${USER_UID} org.freedesktop.Accounts.User SetSession s ubuntu-game-session
+
+[Install]
+WantedBy=multi-user.target
+SVCEOF
+    systemctl daemon-reload
+    systemctl enable ubuntu-game-session-autologin-reset.service
+
+    # ---- HHD: add user to required groups and enable the per-user service -------
+    usermod -aG input,video "$TARGET_USER" || true
+    systemctl daemon-reload
+    systemctl enable "hhd@${TARGET_USER}.service"
+    systemctl restart "hhd@${TARGET_USER}.service" || \
+        echo "ubuntu-game-handheld: HHD could not start (normal in VM or without handheld device)"
+
+    # ---- Set AccountsService session to ubuntu-game-session right now -----------
+    busctl call org.freedesktop.Accounts \
+        "/org/freedesktop/Accounts/User${USER_UID}" \
+        org.freedesktop.Accounts.User SetXSession s ubuntu-game-session 2>/dev/null || true
+    busctl call org.freedesktop.Accounts \
+        "/org/freedesktop/Accounts/User${USER_UID}" \
+        org.freedesktop.Accounts.User SetSession s ubuntu-game-session 2>/dev/null || true
+
+    # ---- Desktop shortcut: Return to Gaming Mode --------------------------------
+    mkdir -p "$USER_HOME/Desktop"
+    cat > "$USER_HOME/Desktop/Return to Gaming Mode.desktop" << DESKEOF
+[Desktop Entry]
+Name=Return to Gaming Mode
+Comment=Switch back to Ubuntu Game Session
+Exec=bash -c 'MY_UID=\$(id -u); busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User\${MY_UID} org.freedesktop.Accounts.User SetXSession s ubuntu-game-session && busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User\${MY_UID} org.freedesktop.Accounts.User SetSession s ubuntu-game-session && sleep 1 && systemctl restart gdm3 2>/dev/null || systemctl restart gdm'
+Icon=steam
+Type=Application
+Terminal=false
+DESKEOF
+    chmod +x "$USER_HOME/Desktop/Return to Gaming Mode.desktop"
+    chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/Desktop/Return to Gaming Mode.desktop"
+
+    su - "$TARGET_USER" -c \
+        "gio set \"$USER_HOME/Desktop/Return to Gaming Mode.desktop\" metadata::trusted true" \
+        2>/dev/null || true
+
+    # ---- Enable native GNOME on-screen keyboard ---------------------------------
+    su - "$TARGET_USER" -c \
+        "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/${USER_UID}/bus \
+         gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true" \
+        2>/dev/null || true
+
+    echo "ubuntu-game-handheld: installation complete. Please reboot to boot into Ubuntu Game Session."
+    ;;
+
+abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+*)
+    echo "postinst called with unknown argument: '$1'" >&2
+    exit 1
+    ;;
+esac
+
+exit 0

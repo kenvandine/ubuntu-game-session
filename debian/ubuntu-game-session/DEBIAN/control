@@ -1,0 +1,16 @@
+Package: ubuntu-game-session
+Version: 0.4
+Architecture: all
+Maintainer: Ken VanDine <ken.vandine@canonical.com>
+Installed-Size: 17
+Depends: gamescope, sxhkd, gdm3, snapd
+Section: misc
+Priority: optional
+Description: Ubuntu Game Session (Steam OS-like gaming experience)
+ Installs a Gamescope-based Steam Gamepad UI as an optional Wayland session.
+ Users can select "Ubuntu Game Session" from the GDM login screen to launch
+ the full-screen Steam interface — a Steam OS-like experience on Ubuntu.
+ .
+ Suitable for desktops and laptops as an optional manually-selected session.
+ Install ubuntu-game-handheld for the full handheld console-mode experience
+ with automatic boot into gaming mode.
