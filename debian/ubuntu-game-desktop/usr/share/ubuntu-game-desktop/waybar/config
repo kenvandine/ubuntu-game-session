@@ -5,12 +5,12 @@
     "spacing": 4,
     "modules-left": ["custom/launcher", "wlr/taskbar"],
     "modules-center": ["clock"],
-    "modules-right": ["network", "battery", "custom/logout", "custom/reboot", "custom/shutdown"],
+    "modules-right": ["network", "battery", "custom/power"],
 
     "custom/launcher": {
-        "format": "🎮",
+        "format": "🎮  Apps",
         "on-click": "ubuntu-game-launcher",
-        "tooltip": "Launch application — games open in gamescope automatically"
+        "tooltip": "Launch apps (Super / Super+Space / right-click desktop)\nGames open in gamescope automatically"
     },
 
     "wlr/taskbar": {
@@ -49,21 +49,9 @@
         "tooltip-format": "{timeTo}\nPower draw: {power:.1f}W"
     },
 
-    "custom/logout": {
-        "format": "󰍃",
-        "on-click": "labwc --exit",
-        "tooltip": "Log out"
-    },
-
-    "custom/reboot": {
-        "format": "󰜉",
-        "on-click": "systemctl reboot",
-        "tooltip": "Reboot"
-    },
-
-    "custom/shutdown": {
+    "custom/power": {
         "format": "󰐥",
-        "on-click": "systemctl poweroff",
-        "tooltip": "Shut down"
+        "on-click": "ubuntu-game-power-menu",
+        "tooltip": "Power options"
     }
 }

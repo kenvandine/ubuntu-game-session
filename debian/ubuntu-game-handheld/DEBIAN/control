@@ -1,6 +1,6 @@
 Package: ubuntu-game-handheld
 Source: ubuntu-game-session
-Version: 0.5
+Version: 0.6
 Architecture: all
 Maintainer: Ken VanDine <ken.vandine@canonical.com>
 Installed-Size: 18

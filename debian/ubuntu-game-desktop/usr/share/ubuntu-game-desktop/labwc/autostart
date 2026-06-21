@@ -1,4 +1,30 @@
 #!/bin/bash
 # labwc autostart — launched by labwc on session start
-waybar &
-nm-applet --indicator &
+
+_CFG=/usr/share/ubuntu-game-desktop
+
+# Set wallpaper to match GNOME's default for the current color scheme
+_COLOR_SCHEME=$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null)
+if [ "$_COLOR_SCHEME" = "'prefer-dark'" ]; then
+    _WALLPAPER=/usr/share/backgrounds/ubuntu-wallpaper-d.png
+else
+    _WALLPAPER=/usr/share/backgrounds/warty-final-ubuntu.png
+fi
+swaybg -i "$_WALLPAPER" -m fill >> "$HOME/ubuntu-game-desktop.log" 2>&1 &
+
+waybar \
+    -c "$_CFG/waybar/config" \
+    -s "$_CFG/waybar/style.css" \
+    >> "$HOME/ubuntu-game-desktop.log" 2>&1 &
+
+nm-applet --indicator >> "$HOME/ubuntu-game-desktop.log" 2>&1 &
+
+# First-run hint: tell the user how to launch apps
+_HINT_FLAG="${XDG_CACHE_HOME:-$HOME/.cache}/ubuntu-game-desktop-hint-shown"
+if [ ! -f "$_HINT_FLAG" ]; then
+    mkdir -p "$(dirname "$_HINT_FLAG")"
+    (sleep 3 && notify-send --urgency=low --expire-time=10000 \
+        "Welcome to Ubuntu Game Desktop" \
+        "Click <b>🎮 Apps</b> in the top bar to launch apps.\n\nKeyboard shortcuts:\n  <b>Super</b> or <b>Super+Space</b> — open launcher\n  <b>Right-click</b> the desktop — open launcher" \
+        && touch "$_HINT_FLAG") &
+fi

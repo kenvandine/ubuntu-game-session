@@ -1,3 +1,18 @@
+ubuntu-game-session (0.6) resolute; urgency=medium
+
+  * ubuntu-game-desktop: improve launcher discoverability — label the waybar
+    launcher button "🎮 Apps" with a filled pill style so it is clearly
+    clickable; update tooltip to list all three launch methods (click, Super,
+    right-click); show a one-time welcome notification on first login that
+    explains how to open the launcher.
+  * ubuntu-game-desktop: fix panel not appearing — pass waybar config and
+    style paths explicitly in autostart instead of relying on XDG_CONFIG_DIRS
+    propagation; add nm-applet and waybar output to ubuntu-game-desktop.log
+    for easier debugging.
+  * ubuntu-game-desktop: add libnotify-bin dependency for notify-send support.
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Sat, 21 Jun 2026 16:21:00 -0400
+
 ubuntu-game-session (0.5) resolute; urgency=medium
 
   * ubuntu-game-desktop: add ubuntu-game-launcher script — a wofi-based
