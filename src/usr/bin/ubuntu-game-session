@@ -1,6 +1,6 @@
 #!/bin/bash
-# steamos-session - Gamescope wrapper for the SteamOS-like session
-# Installed by ubuntu-handheld package to /usr/local/bin/steamos-session
+# ubuntu-game-session - Gamescope wrapper for the Ubuntu Game Session
+# Installed by udeck package to /usr/bin/ubuntu-game-session
 
 # Connect directly to the host's systemd user D-Bus so Steam can communicate
 # with PipeWire/PulseAudio. Spawning a new dbus-launch isolates Steam from audio!
@@ -9,8 +9,8 @@ export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
 
 # Environment variables needed for Steam UI under gamescope
 export PATH="$PATH:/snap/bin:/usr/games:/usr/local/games"
-export XDG_SESSION_DESKTOP=steamos
-export XDG_CURRENT_DESKTOP=steamos
+export XDG_SESSION_DESKTOP=ubuntu-game-session
+export XDG_CURRENT_DESKTOP=ubuntu-game-session
 export GDK_BACKEND=x11
 export SDL_VIDEODRIVER=x11
 
@@ -30,4 +30,4 @@ if [ -f "$HOME/.steam/steam/config/loginusers.vdf" ] || [ -f "$HOME/.local/share
     STEAM_FLAGS="-gamepadui -steamos3 -steampal -steamdeck"
 fi
 
-exec gamescope -e -f -- bash -c "sxhkd -c \"\$HOME/.config/sxhkd/sxhkdrc\" & steam $STEAM_FLAGS" >> "$HOME/steamos.log" 2>&1
+exec gamescope -e -f -- bash -c "sxhkd -c \"\$HOME/.config/sxhkd/sxhkdrc\" & steam $STEAM_FLAGS" >> "$HOME/ubuntu-game-session.log" 2>&1

@@ -1,4 +1,17 @@
-udeck (1.1-1) resolute; urgency=medium
+udeck (1.2-1) resolute; urgency=medium
+
+  * Rebrand gaming session from "Steam OS" to "Ubuntu Game Session".
+  * Rename binaries: steamos-session → ubuntu-game-session,
+    steamos-session-select → ubuntu-game-session-select.
+  * Rename session desktop file: steamos.desktop → ubuntu-game-session.desktop.
+  * Rename systemd service: steamos-autologin-reset → ubuntu-game-session-autologin-reset.
+  * Rename sudoers file: steamos-desktop-switch → ubuntu-game-session-switch.
+  * Update XDG_SESSION_DESKTOP and XDG_CURRENT_DESKTOP env vars accordingly.
+  * Update all references in postinst, postrm, scripts, and README.
+
+ -- udeck contributors <udeck@localhost>  Sat, 21 Jun 2026 13:48:00 -0400
+
+
 
   * Port to Ubuntu 26.04 (Resolute Raccoon).
   * Update VM test target to 26.04.

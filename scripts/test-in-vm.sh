@@ -82,7 +82,7 @@ else
 fi
 
 # Verify gamescope session wrapper exists
-if multipass exec "$VM_NAME" -- stat /usr/bin/steamos-session > /dev/null 2>&1; then
+if multipass exec "$VM_NAME" -- stat /usr/bin/ubuntu-game-session > /dev/null 2>&1; then
     echo " [OK] Gamescope session wrapper script installed."
 else
     echo " [FAIL] Gamescope session wrapper script is missing!"
@@ -140,7 +140,7 @@ else
 fi
 
 # Verify systemd cleanups
-if multipass exec "$VM_NAME" -- stat /etc/systemd/system/steamos-autologin-reset.service > /dev/null 2>&1; then
+if multipass exec "$VM_NAME" -- stat /etc/systemd/system/ubuntu-game-session-autologin-reset.service > /dev/null 2>&1; then
     echo " [FAIL] Reset service still exists after removal!"
     exit 1
 else

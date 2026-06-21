@@ -6,13 +6,14 @@ Installed-Size: 31
 Depends: gamescope, sxhkd, acpi-call-dkms, python3-venv, python3-dev, python3-pip, build-essential, gir1.2-gtk-3.0, curl, gdm3, libfuse2t64, libhidapi-hidraw0, udev
 Section: misc
 Priority: optional
-Description: Handheld Ubuntu Setup (SteamOS-like experience)
+Description: Handheld Ubuntu Setup (Ubuntu Game Session)
  Transforms an Ubuntu installation into a console-like handheld gaming
  experience. Installs and configures:
-  - Gamescope Steam Gamepad UI as the default boot session
+  - Ubuntu Game Session: Gamescope Steam Gamepad UI as the default boot session
+    (a Steam OS-like experience)
   - Handheld Daemon (HHD) for TDP and controller management
   - HHD overlay for in-game quick access
-  - Seamless switching between SteamOS and Ubuntu desktop
+  - Seamless switching between Ubuntu Game Session and Ubuntu desktop
   - Virtual keyboard for touchscreen / handheld input
  .
  Remove the package to fully revert to original Ubuntu behaviour.

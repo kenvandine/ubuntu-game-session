@@ -77,7 +77,7 @@ rm /tmp/steam.deb
 
 echo "[2/4] Setting up Gamescope Steam Session..."
 # Create the launcher script
-cat << 'EOF' > /usr/bin/steamos-session
+cat << 'EOF' > /usr/bin/ubuntu-game-session
 #!/bin/bash
 # A basic gamescope session wrapper
 
@@ -89,8 +89,8 @@ export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
 # Set environmental variables often needed for Steam UI under gamescope
 # Ensure popular steam installation paths (like snap) are available
 export PATH="$PATH:/snap/bin:/usr/games:/usr/local/games"
-export XDG_SESSION_DESKTOP=steamos
-export XDG_CURRENT_DESKTOP=steamos
+export XDG_SESSION_DESKTOP=ubuntu-game-session
+export XDG_CURRENT_DESKTOP=ubuntu-game-session
 # Additional environment variables to prevent Wayland-sandbox crashes (especially for snap)
 export GDK_BACKEND=x11
 export SDL_VIDEODRIVER=x11
@@ -111,30 +111,30 @@ XF86AudioMute
     wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
 KEYBINDINGS
 
-    # Only activate strict SteamOS UI flags if steam is fully logged in.
+    # Only activate strict Steam Deck UI flags if steam is fully logged in.
     # Otherwise the "Out of Box Experience" (OOBE) network updater fails.
     STEAM_FLAGS="-gamepadui"
     if [ -f "$HOME/.steam/steam/config/loginusers.vdf" ] || [ -f "$HOME/.local/share/Steam/config/loginusers.vdf" ]; then
         STEAM_FLAGS="-gamepadui -steamos3 -steampal -steamdeck"
     fi
 
-    exec gamescope -e -f -- bash -c "sxhkd -c \"\$HOME/.config/sxhkd/sxhkdrc\" & steam $STEAM_FLAGS" >> "$HOME/steamos.log" 2>&1
+    exec gamescope -e -f -- bash -c "sxhkd -c \"\$HOME/.config/sxhkd/sxhkdrc\" & steam $STEAM_FLAGS" >> "$HOME/ubuntu-game-session.log" 2>&1
 EOF
-chmod +x /usr/bin/steamos-session
+chmod +x /usr/bin/ubuntu-game-session
 
 # Create the wayland session file for GDM
 mkdir -p /usr/share/wayland-sessions
-cat << 'EOF' > /usr/share/wayland-sessions/steamos.desktop
+cat << 'EOF' > /usr/share/wayland-sessions/ubuntu-game-session.desktop
 [Desktop Entry]
-Name=Steam OS
-Comment=This session logs you into the Steam Gamepad UI using Gamescope
-Exec=/usr/bin/steamos-session
+Name=Ubuntu Game Session
+Comment=Steam Gamepad UI via Gamescope (a Steam OS-like gaming experience)
+Exec=/usr/bin/ubuntu-game-session
 Type=Application
-DesktopNames=steamos
+DesktopNames=ubuntu-game-session
 EOF
 
-# Provide a mock steamos-session-select so "Switch to Desktop" works in the Power Menu
-cat << 'EOF' > /usr/bin/steamos-session-select
+# Provide ubuntu-game-session-select so "Switch to Desktop" works in the Power Menu
+cat << 'EOF' > /usr/bin/ubuntu-game-session-select
 #!/bin/bash
 # Called by Steam when user clicks "Switch to Desktop".
 # Sets AccountsService session to ubuntu, then terminates the Gamescope session.
@@ -145,13 +145,13 @@ busctl call org.freedesktop.Accounts "/org/freedesktop/Accounts/User$(id -u)" \
     org.freedesktop.Accounts.User SetSession s "ubuntu"
 pkill gamescope
 EOF
-chmod +x /usr/bin/steamos-session-select
+chmod +x /usr/bin/ubuntu-game-session-select
 
 # Grant NOPASSWD for GDM restarts (used by "Return to Gaming Mode" desktop shortcut)
 # Use printf to avoid any leading whitespace that would break visudo syntax checking.
 printf '%s ALL=(ALL) NOPASSWD: /bin/systemctl restart gdm3, /bin/systemctl restart gdm\n' "$TARGET_USER" \
-    > /etc/sudoers.d/steamos-desktop-switch
-chmod 0440 /etc/sudoers.d/steamos-desktop-switch
+    > /etc/sudoers.d/ubuntu-game-session-switch
+chmod 0440 /etc/sudoers.d/ubuntu-game-session-switch
 
 # Write GDM config with tee so AutomaticLogin is always set correctly.
 # Using sed against the default file is unreliable -- the keys are commented out
@@ -178,30 +178,30 @@ GDMEOF
 # that runs as root -- id -u inside a systemd ExecStart would return 0 (root), not the user.
 USER_UID=$(id -u "$TARGET_USER")
 
-# On every boot, reset the AccountsService session pointer back to steamos
-# so that GDM auto-login always boots into SteamOS after a reboot.
-cat > /etc/systemd/system/steamos-autologin-reset.service << SVCEOF
+# On every boot, reset the AccountsService session pointer back to ubuntu-game-session
+# so that GDM auto-login always boots into Ubuntu Game Session after a reboot.
+cat > /etc/systemd/system/ubuntu-game-session-autologin-reset.service << SVCEOF
 [Unit]
-Description=Reset Default Session to SteamOS on Boot
+Description=Reset Default Session to Ubuntu Game Session on Boot
 After=accounts-daemon.service
 Before=gdm.service gdm3.service display-manager.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User${USER_UID} org.freedesktop.Accounts.User SetXSession s steamos
-ExecStart=/usr/bin/busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User${USER_UID} org.freedesktop.Accounts.User SetSession s steamos
+ExecStart=/usr/bin/busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User${USER_UID} org.freedesktop.Accounts.User SetXSession s ubuntu-game-session
+ExecStart=/usr/bin/busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User${USER_UID} org.freedesktop.Accounts.User SetSession s ubuntu-game-session
 
 [Install]
 WantedBy=multi-user.target
 SVCEOF
 systemctl daemon-reload
-systemctl enable steamos-autologin-reset.service
+systemctl enable ubuntu-game-session-autologin-reset.service
 
 # Also set the session right now so the very first reboot works immediately
 busctl call org.freedesktop.Accounts "/org/freedesktop/Accounts/User${USER_UID}" \
-    org.freedesktop.Accounts.User SetXSession s steamos
+    org.freedesktop.Accounts.User SetXSession s ubuntu-game-session
 busctl call org.freedesktop.Accounts "/org/freedesktop/Accounts/User${USER_UID}" \
-    org.freedesktop.Accounts.User SetSession s steamos
+    org.freedesktop.Accounts.User SetSession s ubuntu-game-session
 
 # Allow the user to restart gdm3 without a password via polkit.
 # This powers the "Return to Gaming Mode" shortcut without needing sudoers.
@@ -223,8 +223,8 @@ mkdir -p "$USER_HOME/Desktop"
 cat > "$USER_HOME/Desktop/Return to Gaming Mode.desktop" << DESKEOF
 [Desktop Entry]
 Name=Return to Gaming Mode
-Comment=Switch back to Steam Gamepad UI
-Exec=bash -c 'MY_UID=$(id -u); busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User${MY_UID} org.freedesktop.Accounts.User SetXSession s steamos && busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User${MY_UID} org.freedesktop.Accounts.User SetSession s steamos && sleep 1 && systemctl restart gdm3 2>/dev/null || systemctl restart gdm'
+Comment=Switch back to Ubuntu Game Session
+Exec=bash -c 'MY_UID=$(id -u); busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User${MY_UID} org.freedesktop.Accounts.User SetXSession s ubuntu-game-session && busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User${MY_UID} org.freedesktop.Accounts.User SetSession s ubuntu-game-session && sleep 1 && systemctl restart gdm3 2>/dev/null || systemctl restart gdm'
 Icon=steam
 Type=Application
 Terminal=false
@@ -345,7 +345,7 @@ echo "=========================================="
 echo "What's Next:"
 echo "1. Reboot or log out."
 echo "2. From the GDM login screen, click the gear icon in the bottom right corner"
-echo "   and select 'Steam OS' instead of 'Ubuntu' or 'GNOME'."
+echo "   and select 'Ubuntu Game Session' instead of 'Ubuntu' or 'GNOME'."
 echo "3. The system will start into the Steam Deck Gamepad UI."
 echo "4. Press the quick access button (e.g., Legion R) in-game to launch the hhd-overlay"
 echo "   for TDP control and controller tuning."

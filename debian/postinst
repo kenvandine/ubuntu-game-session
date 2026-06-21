@@ -79,26 +79,26 @@ POLKITEOF
 
     # ---- Sudoers: legacy fallback for systemctl restart -------------------------
     printf '%s ALL=(ALL) NOPASSWD: /bin/systemctl restart gdm3, /bin/systemctl restart gdm\n' \
-        "${TARGET_USER}" > /etc/sudoers.d/steamos-desktop-switch
-    chmod 0440 /etc/sudoers.d/steamos-desktop-switch
+        "${TARGET_USER}" > /etc/sudoers.d/ubuntu-game-session-switch
+    chmod 0440 /etc/sudoers.d/ubuntu-game-session-switch
 
     # ---- Systemd: boot session reset service ------------------------------------
-    cat > /etc/systemd/system/steamos-autologin-reset.service << SVCEOF
+    cat > /etc/systemd/system/ubuntu-game-session-autologin-reset.service << SVCEOF
 [Unit]
-Description=Reset Default Session to SteamOS on Boot
+Description=Reset Default Session to Ubuntu Game Session on Boot
 After=accounts-daemon.service
 Before=gdm.service gdm3.service display-manager.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User${USER_UID} org.freedesktop.Accounts.User SetXSession s steamos
-ExecStart=/usr/bin/busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User${USER_UID} org.freedesktop.Accounts.User SetSession s steamos
+ExecStart=/usr/bin/busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User${USER_UID} org.freedesktop.Accounts.User SetXSession s ubuntu-game-session
+ExecStart=/usr/bin/busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User${USER_UID} org.freedesktop.Accounts.User SetSession s ubuntu-game-session
 
 [Install]
 WantedBy=multi-user.target
 SVCEOF
     systemctl daemon-reload
-    systemctl enable steamos-autologin-reset.service
+    systemctl enable ubuntu-game-session-autologin-reset.service
 
     # ---- Systemd: HHD service ---------------------------------------------------
     cat > /etc/systemd/system/hhd@.service << HHDEOF
@@ -164,21 +164,21 @@ UIEOF
     systemctl restart "hhd@${TARGET_USER}.service" || \
         echo "udeck: HHD could not start (normal in VM or without handheld device)"
 
-    # ---- Set AccountsService session to steamos right now -----------------------
+    # ---- Set AccountsService session to ubuntu-game-session right now -----------
     busctl call org.freedesktop.Accounts \
         "/org/freedesktop/Accounts/User${USER_UID}" \
-        org.freedesktop.Accounts.User SetXSession s steamos 2>/dev/null || true
+        org.freedesktop.Accounts.User SetXSession s ubuntu-game-session 2>/dev/null || true
     busctl call org.freedesktop.Accounts \
         "/org/freedesktop/Accounts/User${USER_UID}" \
-        org.freedesktop.Accounts.User SetSession s steamos 2>/dev/null || true
+        org.freedesktop.Accounts.User SetSession s ubuntu-game-session 2>/dev/null || true
 
     # ---- Desktop shortcut: Return to Gaming Mode --------------------------------
     mkdir -p "$USER_HOME/Desktop"
     cat > "$USER_HOME/Desktop/Return to Gaming Mode.desktop" << DESKEOF
 [Desktop Entry]
 Name=Return to Gaming Mode
-Comment=Switch back to Steam Gamepad UI
-Exec=bash -c 'MY_UID=\$(id -u); busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User\${MY_UID} org.freedesktop.Accounts.User SetXSession s steamos && busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User\${MY_UID} org.freedesktop.Accounts.User SetSession s steamos && sleep 1 && systemctl restart gdm3 2>/dev/null || systemctl restart gdm'
+Comment=Switch back to Ubuntu Game Session
+Exec=bash -c 'MY_UID=\$(id -u); busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User\${MY_UID} org.freedesktop.Accounts.User SetXSession s ubuntu-game-session && busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User\${MY_UID} org.freedesktop.Accounts.User SetSession s ubuntu-game-session && sleep 1 && systemctl restart gdm3 2>/dev/null || systemctl restart gdm'
 Icon=steam
 Type=Application
 Terminal=false
@@ -197,7 +197,7 @@ DESKEOF
          gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true" \
         2>/dev/null || true
 
-    echo "udeck: installation complete. Please reboot to boot into SteamOS."
+    echo "udeck: installation complete. Please reboot to boot into Ubuntu Game Session."
     ;;
 
 abort-upgrade|abort-remove|abort-deconfigure)

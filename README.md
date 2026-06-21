@@ -1,6 +1,6 @@
 # Ubuntu Handheld Setup
 
-A SteamOS-like experience on Ubuntu for handheld gaming PCs (Lenovo Legion Go and similar).
+A Steam OS-like gaming experience on Ubuntu for handheld gaming PCs (Lenovo Legion Go and similar), delivered as **Ubuntu Game Session**.
 Two things live here: a **ready-to-install `.deb` package** for end users, and **Debian packaging scaffolding** for getting `hhd` into Ubuntu universe via MOTU.
 
 ---
@@ -50,7 +50,7 @@ From the Steam Gamepad UI:
 ### How to return to Gaming Mode
 
 Click the **Return to Gaming Mode** shortcut on the GNOME desktop.
-The system restarts the display manager and auto-logs you into SteamOS.
+The system restarts the display manager and auto-logs you into Ubuntu Game Session.
 
 ### How to fully uninstall
 
@@ -92,9 +92,9 @@ Immutable distributions like Bazzite are great appliances but are restrictive fo
 
 | Event | Mechanism |
 |---|---|
-| Boot | `steamos-autologin-reset.service` sets AccountsService session to `steamos` before GDM starts; GDM auto-logs in |
-| Switch to Desktop | Steam calls `/usr/bin/steamos-session-select` → sets session to `ubuntu` → `loginctl terminate-session` |
-| Return to Gaming Mode | Desktop shortcut → `busctl` sets session to `steamos` → `systemctl restart gdm3` (polkit rule, no password) |
+| Boot | `ubuntu-game-session-autologin-reset.service` sets AccountsService session to `ubuntu-game-session` before GDM starts; GDM auto-logs in |
+| Switch to Desktop | Steam calls `/usr/bin/ubuntu-game-session-select` → sets session to `ubuntu` → `loginctl terminate-session` |
+| Return to Gaming Mode | Desktop shortcut → `busctl` sets session to `ubuntu-game-session` → `systemctl restart gdm3` (polkit rule, no password) |
 
 ### Why pip-in-venv for HHD?
 
@@ -118,9 +118,9 @@ The `upstream/hhd-pkg/` directory contains a complete Debian source package for 
 ├── src/                            # static payloads shipped in the .deb
 │   ├── etc/apt/sources.list.d/
 │   │   └── steam.list
-│   ├── usr/bin/steamos-session-select
-│   ├── usr/bin/steamos-session
-│   └── usr/share/wayland-sessions/steamos.desktop
+│   ├── usr/bin/ubuntu-game-session-select
+│   ├── usr/bin/ubuntu-game-session
+│   └── usr/share/wayland-sessions/ubuntu-game-session.desktop
 ├── debian/                         # MOTU-standard Debian package source files
 │   ├── control                     # package metadata + deps
 │   ├── rules                       # debhelper build rules
@@ -138,10 +138,10 @@ The `upstream/hhd-pkg/` directory contains a complete Debian source package for 
 
 | Path | Purpose |
 |---|---|
-| `/usr/bin/steamos-session` | Gamescope + Steam launcher wrapper |
-| `/usr/bin/steamos-session-select` | Steam "Switch to Desktop" hook |
-| `/usr/share/wayland-sessions/steamos.desktop` | GDM session entry |
-| `/etc/systemd/system/steamos-autologin-reset.service` | Resets session to SteamOS on every boot |
+| `/usr/bin/ubuntu-game-session` | Gamescope + Steam launcher wrapper |
+| `/usr/bin/ubuntu-game-session-select` | Steam "Switch to Desktop" hook |
+| `/usr/share/wayland-sessions/ubuntu-game-session.desktop` | GDM session entry |
+| `/etc/systemd/system/ubuntu-game-session-autologin-reset.service` | Resets session to Ubuntu Game Session on every boot |
 | `/etc/systemd/system/hhd@.service` | HHD daemon (per-user template) |
 | `/etc/polkit-1/rules.d/50-gdm-restart.rules` | Allows GDM restart without password |
 | `/etc/apt/sources.list.d/steam.list` | Valve Steam APT repository |

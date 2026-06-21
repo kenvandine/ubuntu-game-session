@@ -1,8 +1,8 @@
 #!/bin/bash
-# postinst - Runs as root after dpkg -i installs the ubuntu-handheld package
+# postinst - Runs as root after dpkg -i installs the udeck package
 set -e
 
-STATE_DIR=/var/lib/ubuntu-handheld
+STATE_DIR=/var/lib/udeck
 
 case "$1" in
 configure)
@@ -12,12 +12,12 @@ configure)
         TARGET_USER=$(id -un 1000 2>/dev/null)
     fi
     if [ -z "$TARGET_USER" ]; then
-        echo "ERROR: ubuntu-handheld: could not detect the primary user. Aborting." >&2
+        echo "ERROR: udeck: could not detect the primary user. Aborting." >&2
         exit 1
     fi
     USER_UID=$(id -u "$TARGET_USER")
     USER_HOME=$(eval echo ~"$TARGET_USER")
-    echo "ubuntu-handheld: configuring for user '$TARGET_USER' (uid ${USER_UID})"
+    echo "udeck: configuring for user '$TARGET_USER' (uid ${USER_UID})"
 
     # ---- Save originals for clean revert -----------------------------------------
     mkdir -p "$STATE_DIR"
@@ -33,8 +33,8 @@ configure)
     # and the GPG key was added in preinst. apt-get handles it like any other package.
     # However, because we are currently inside a `dpkg` installation lock, we cannot
     # synchronously invoke `apt-get install`. We use a transient systemd task to wait and install.
-    echo "ubuntu-handheld: queueing asynchronous installation of steam-launcher and dependency verification..."
-    systemd-run --unit=ubuntu-handheld-steam-installer bash -c '
+    echo "udeck: queueing asynchronous installation of steam-launcher and dependency verification..."
+    systemd-run --unit=udeck-steam-installer bash -c '
         echo "Waiting for dpkg locks to release..."
         while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/dpkg/lock >/dev/null 2>&1; do
             sleep 2
@@ -47,7 +47,7 @@ configure)
     # ---- GDM: automatic & timed login --------------------------------------------
     tee /etc/gdm3/custom.conf > /dev/null << GDMEOF
 # GDM configuration storage
-# Managed by ubuntu-handheld package -- remove package to revert
+# Managed by udeck package -- remove package to revert
 [daemon]
 AutomaticLoginEnable=True
 AutomaticLogin=${TARGET_USER}
@@ -79,26 +79,26 @@ POLKITEOF
 
     # ---- Sudoers: legacy fallback for systemctl restart -------------------------
     printf '%s ALL=(ALL) NOPASSWD: /bin/systemctl restart gdm3, /bin/systemctl restart gdm\n' \
-        "${TARGET_USER}" > /etc/sudoers.d/steamos-desktop-switch
-    chmod 0440 /etc/sudoers.d/steamos-desktop-switch
+        "${TARGET_USER}" > /etc/sudoers.d/ubuntu-game-session-switch
+    chmod 0440 /etc/sudoers.d/ubuntu-game-session-switch
 
     # ---- Systemd: boot session reset service ------------------------------------
-    cat > /etc/systemd/system/steamos-autologin-reset.service << SVCEOF
+    cat > /etc/systemd/system/ubuntu-game-session-autologin-reset.service << SVCEOF
 [Unit]
-Description=Reset Default Session to SteamOS on Boot
+Description=Reset Default Session to Ubuntu Game Session on Boot
 After=accounts-daemon.service
 Before=gdm.service gdm3.service display-manager.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User${USER_UID} org.freedesktop.Accounts.User SetXSession s steamos
-ExecStart=/usr/bin/busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User${USER_UID} org.freedesktop.Accounts.User SetSession s steamos
+ExecStart=/usr/bin/busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User${USER_UID} org.freedesktop.Accounts.User SetXSession s ubuntu-game-session
+ExecStart=/usr/bin/busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User${USER_UID} org.freedesktop.Accounts.User SetSession s ubuntu-game-session
 
 [Install]
 WantedBy=multi-user.target
 SVCEOF
     systemctl daemon-reload
-    systemctl enable steamos-autologin-reset.service
+    systemctl enable ubuntu-game-session-autologin-reset.service
 
     # ---- Systemd: HHD service ---------------------------------------------------
     cat > /etc/systemd/system/hhd@.service << HHDEOF
@@ -162,23 +162,23 @@ UIEOF
     systemctl daemon-reload
     systemctl enable "hhd@${TARGET_USER}.service"
     systemctl restart "hhd@${TARGET_USER}.service" || \
-        echo "ubuntu-handheld: HHD could not start (normal in VM or without handheld device)"
+        echo "udeck: HHD could not start (normal in VM or without handheld device)"
 
-    # ---- Set AccountsService session to steamos right now -----------------------
+    # ---- Set AccountsService session to ubuntu-game-session right now -----------
     busctl call org.freedesktop.Accounts \
         "/org/freedesktop/Accounts/User${USER_UID}" \
-        org.freedesktop.Accounts.User SetXSession s steamos 2>/dev/null || true
+        org.freedesktop.Accounts.User SetXSession s ubuntu-game-session 2>/dev/null || true
     busctl call org.freedesktop.Accounts \
         "/org/freedesktop/Accounts/User${USER_UID}" \
-        org.freedesktop.Accounts.User SetSession s steamos 2>/dev/null || true
+        org.freedesktop.Accounts.User SetSession s ubuntu-game-session 2>/dev/null || true
 
     # ---- Desktop shortcut: Return to Gaming Mode --------------------------------
     mkdir -p "$USER_HOME/Desktop"
     cat > "$USER_HOME/Desktop/Return to Gaming Mode.desktop" << DESKEOF
 [Desktop Entry]
 Name=Return to Gaming Mode
-Comment=Switch back to Steam Gamepad UI
-Exec=bash -c 'MY_UID=\$(id -u); busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User\${MY_UID} org.freedesktop.Accounts.User SetXSession s steamos && busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User\${MY_UID} org.freedesktop.Accounts.User SetSession s steamos && sleep 1 && systemctl restart gdm3 2>/dev/null || systemctl restart gdm'
+Comment=Switch back to Ubuntu Game Session
+Exec=bash -c 'MY_UID=\$(id -u); busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User\${MY_UID} org.freedesktop.Accounts.User SetXSession s ubuntu-game-session && busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User\${MY_UID} org.freedesktop.Accounts.User SetSession s ubuntu-game-session && sleep 1 && systemctl restart gdm3 2>/dev/null || systemctl restart gdm'
 Icon=steam
 Type=Application
 Terminal=false
@@ -197,7 +197,7 @@ DESKEOF
          gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true" \
         2>/dev/null || true
 
-    echo "ubuntu-handheld: installation complete. Please reboot to boot into SteamOS."
+    echo "udeck: installation complete. Please reboot to boot into Ubuntu Game Session."
     ;;
 
 abort-upgrade|abort-remove|abort-deconfigure)

@@ -21,13 +21,14 @@ Depends: gamescope,
          libhidapi-hidraw0,
          udev,
          ${misc:Depends}
-Description: Handheld Ubuntu Setup (SteamOS-like experience)
+Description: Handheld Ubuntu Setup (Ubuntu Game Session)
  Transforms an Ubuntu installation into a console-like handheld gaming
  experience. Installs and configures:
-  - Gamescope Steam Gamepad UI as the default boot session
+  - Ubuntu Game Session: Gamescope Steam Gamepad UI as the default boot session
+    (a Steam OS-like experience)
   - Handheld Daemon (HHD) for TDP and controller management
   - HHD overlay for in-game quick access
-  - Seamless switching between SteamOS and Ubuntu desktop
+  - Seamless switching between Ubuntu Game Session and Ubuntu desktop
   - Virtual keyboard for touchscreen / handheld input
  .
  Remove the package to fully revert to original Ubuntu behaviour.

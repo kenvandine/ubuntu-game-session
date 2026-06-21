@@ -23,9 +23,9 @@ remove|purge|failed-upgrade|abort-install|abort-upgrade|disappear)
     if [ -n "$TARGET_USER" ]; then
         systemctl disable --now "hhd@${TARGET_USER}.service" 2>/dev/null || true
     fi
-    systemctl disable --now steamos-autologin-reset.service 2>/dev/null || true
+    systemctl disable --now ubuntu-game-session-autologin-reset.service 2>/dev/null || true
 
-    rm -f /etc/systemd/system/steamos-autologin-reset.service
+    rm -f /etc/systemd/system/ubuntu-game-session-autologin-reset.service
     rm -f /etc/systemd/system/hhd@.service
     systemctl daemon-reload
 
@@ -33,7 +33,7 @@ remove|purge|failed-upgrade|abort-install|abort-upgrade|disappear)
     rm -f /etc/polkit-1/rules.d/50-gdm-restart.rules
 
     # ---- Remove sudoers entry ---------------------------------------------------
-    rm -f /etc/sudoers.d/steamos-desktop-switch
+    rm -f /etc/sudoers.d/ubuntu-game-session-switch
 
     # ---- Remove udev rules ------------------------------------------------------
     rm -f /etc/udev/rules.d/83-hhd-user.rules
