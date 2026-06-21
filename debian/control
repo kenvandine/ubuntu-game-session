@@ -27,6 +27,7 @@ Architecture: all
 Depends: labwc,
          waybar,
          wofi,
+         swaybg,
          network-manager-gnome,
          fonts-noto,
          libnotify-bin,

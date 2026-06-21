@@ -3,6 +3,15 @@
 
 _CFG=/usr/share/ubuntu-game-desktop
 
+# Set wallpaper to match GNOME's default for the current color scheme
+_COLOR_SCHEME=$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null)
+if [ "$_COLOR_SCHEME" = "'prefer-dark'" ]; then
+    _WALLPAPER=/usr/share/backgrounds/ubuntu-wallpaper-d.png
+else
+    _WALLPAPER=/usr/share/backgrounds/warty-final-ubuntu.png
+fi
+swaybg -i "$_WALLPAPER" -m fill >> "$HOME/ubuntu-game-desktop.log" 2>&1 &
+
 waybar \
     -c "$_CFG/waybar/config" \
     -s "$_CFG/waybar/style.css" \

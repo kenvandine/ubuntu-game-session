@@ -80,32 +80,12 @@ window#waybar {
     to { color: #cdd6f4; }
 }
 
-#custom-logout {
-    padding: 0 10px;
-    font-size: 16px;
-    color: #89dceb;
-}
-
-#custom-logout:hover {
-    background: rgba(137, 220, 235, 0.15);
-}
-
-#custom-reboot {
-    padding: 0 10px;
-    font-size: 16px;
-    color: #f9e2af;
-}
-
-#custom-reboot:hover {
-    background: rgba(249, 226, 175, 0.15);
-}
-
-#custom-shutdown {
+#custom-power {
     padding: 0 10px;
     font-size: 16px;
     color: #f38ba8;
 }
 
-#custom-shutdown:hover {
+#custom-power:hover {
     background: rgba(243, 139, 168, 0.15);
 }
