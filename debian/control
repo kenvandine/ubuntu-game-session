@@ -29,6 +29,7 @@ Depends: labwc,
          wofi,
          network-manager-gnome,
          fonts-noto,
+         libnotify-bin,
          ${misc:Depends}
 Description: Ubuntu Gaming Desktop Session
  A lightweight Wayland desktop session (labwc + waybar + wofi) optimised for

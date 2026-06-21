@@ -8,9 +8,9 @@
     "modules-right": ["network", "battery", "custom/logout", "custom/reboot", "custom/shutdown"],
 
     "custom/launcher": {
-        "format": "🎮",
+        "format": "🎮  Apps",
         "on-click": "ubuntu-game-launcher",
-        "tooltip": "Launch application — games open in gamescope automatically"
+        "tooltip": "Launch apps (Super / Super+Space / right-click desktop)\nGames open in gamescope automatically"
     },
 
     "wlr/taskbar": {
