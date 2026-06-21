@@ -1,34 +1,50 @@
-Source: udeck
+Source: ubuntu-game-session
 Section: misc
 Priority: optional
-Maintainer: udeck contributors <udeck@localhost>
-Build-Depends: debhelper-compat (= 13)
+Maintainer: ubuntu-game-session contributors <ubuntu-game-session@localhost>
+Build-Depends: debhelper-compat (= 13),
+              build-essential
 Standards-Version: 4.6.2
 
-Package: udeck
+Package: ubuntu-game-session
 Architecture: all
 Depends: gamescope,
-         sxhkd,
-         acpi-call-dkms,
-         python3-venv,
-         python3-dev,
-         python3-pip,
-         build-essential,
-         gir1.2-gtk-3.0,
-         curl,
-         gdm3,
-         libfuse2t64,
-         libhidapi-hidraw0,
-         udev,
-         ${misc:Depends}
-Description: Handheld Ubuntu Setup (Ubuntu Game Session)
- Transforms an Ubuntu installation into a console-like handheld gaming
- experience. Installs and configures:
-  - Ubuntu Game Session: Gamescope Steam Gamepad UI as the default boot session
-    (a Steam OS-like experience)
+        sxhkd,
+        gdm3,
+        snapd,
+        ${misc:Depends}
+Description: Ubuntu Game Session (Steam OS-like gaming experience)
+ Installs a Gamescope-based Steam Gamepad UI as an optional Wayland session.
+ Users can select "Ubuntu Game Session" from the GDM login screen to launch
+ the full-screen Steam interface — a Steam OS-like experience on Ubuntu.
+ .
+ Suitable for desktops and laptops as an optional manually-selected session.
+ Install ubuntu-game-autologin for the full handheld console-mode experience
+ with automatic boot into gaming mode.
+
+Package: ubuntu-game-autologin
+Architecture: all
+Depends: ubuntu-game-session,
+        acpi-call-dkms,
+        python3-venv,
+        python3-dev,
+        python3-pip,
+        curl,
+        gir1.2-gtk-3.0,
+        libfuse2t64,
+        libhidapi-hidraw0,
+        udev,
+        ${misc:Depends}
+Description: Ubuntu Game Session autologin for handheld gaming PCs
+ Configures GDM to automatically log in to Ubuntu Game Session on every boot,
+ suitable for handheld gaming PCs (Lenovo Legion Go, Steam Deck, and similar).
+ .
+ Installs and configures:
+  - GDM autologin into Ubuntu Game Session on every boot
   - Handheld Daemon (HHD) for TDP and controller management
   - HHD overlay for in-game quick access
   - Seamless switching between Ubuntu Game Session and Ubuntu desktop
   - Virtual keyboard for touchscreen / handheld input
  .
- Remove the package to fully revert to original Ubuntu behaviour.
+ Depends on ubuntu-game-session. Remove the package to fully revert to
+ original Ubuntu behaviour.

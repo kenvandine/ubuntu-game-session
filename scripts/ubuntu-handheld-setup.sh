@@ -30,24 +30,13 @@ echo " Starting Ubuntu Handheld Setup"
 echo "=========================================="
 
 echo "[1/4] Installing system dependencies via APT..."
-# Update apt first to ensure we can install software-properties-common
 apt-get update
 apt-get install -y software-properties-common
 
-# Enable necessary repositories for gamescope (universe) and steam (multiverse)
+# Enable universe repository (needed for gamescope)
 add-apt-repository -y universe
-add-apt-repository -y multiverse
-
-# Enable 32-bit architecture required by steam-installer
-dpkg --add-architecture i386
-
-# Update apt to fetch 32-bit package lists and new PPAs
 apt-get update
 
-# Install required packages (from standard repos, avoiding pipx)
-# Note: Ubuntu 26.04 (Resolute Raccoon) has good support for gamescope natively
-# Use steam-installer which is commonly the package name on ubuntu, or just steam using the multiverse repo.
-# Some environments use steam-installer instead of steam.
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
     curl \
     git \
@@ -63,17 +52,14 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y \
     libhidapi-hidraw0 \
     acpi-call-dkms \
     sxhkd \
-    libc6:i386 \
-    libgl1:i386 \
-    libgl1-mesa-dri:i386 \
-    libglx0:i386
+    snapd
 
-echo "[1.5/4] Installing Official Steam (preventing Snap confinement issues)..."
-# Ubuntu's 'steam' and 'steam-installer' default to the Snap version which heavily breaks Gamescope
-wget -qO /tmp/steam.deb "https://repo.steampowered.com/steam/archive/precise/steam_latest.deb"
-# Use apt context to resolve dependencies of the deb cleanly
-apt-get install -y /tmp/steam.deb
-rm /tmp/steam.deb
+echo "[1.5/4] Installing Steam via snap..."
+if ! snap list steam >/dev/null 2>&1; then
+    snap install steam
+else
+    echo "Steam snap already installed."
+fi
 
 echo "[2/4] Setting up Gamescope Steam Session..."
 # Create the launcher script

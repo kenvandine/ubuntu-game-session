@@ -1,6 +1,6 @@
 #!/bin/bash
 # ubuntu-game-session - Gamescope wrapper for the Ubuntu Game Session
-# Installed by udeck package to /usr/bin/ubuntu-game-session
+# Installed by ubuntu-game-session package to /usr/bin/ubuntu-game-session
 
 # Connect directly to the host's systemd user D-Bus so Steam can communicate
 # with PipeWire/PulseAudio. Spawning a new dbus-launch isolates Steam from audio!

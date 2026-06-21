@@ -1,22 +1,23 @@
 #!/bin/bash
-# postrm - Runs as root on apt remove / apt purge udeck
+# ubuntu-game-autologin.postrm - Runs as root on package removal/purge.
+# Reverts GDM autologin config, removes systemd services, polkit rule,
+# sudoers entry, udev rules, and HHD symlinks.
 set -e
 
-STATE_DIR=/var/lib/udeck
+STATE_DIR=/var/lib/ubuntu-game-autologin
 
 case "$1" in
 remove|purge|failed-upgrade|abort-install|abort-upgrade|disappear)
 
-    echo "udeck: reverting configuration changes..."
+    echo "ubuntu-game-autologin: reverting configuration changes..."
 
     # ---- Restore original GDM config --------------------------------------------
     if [ -f "$STATE_DIR/gdm3-custom.conf.orig" ]; then
         cp "$STATE_DIR/gdm3-custom.conf.orig" /etc/gdm3/custom.conf
-        echo "udeck: /etc/gdm3/custom.conf restored"
+        echo "ubuntu-game-autologin: /etc/gdm3/custom.conf restored"
     fi
 
     # ---- Disable and remove systemd services ------------------------------------
-    # Read the stored user so we disable the right hhd instance
     TARGET_USER=""
     [ -f "$STATE_DIR/target_user" ] && TARGET_USER=$(cat "$STATE_DIR/target_user")
 
@@ -46,38 +47,27 @@ remove|purge|failed-upgrade|abort-install|abort-upgrade|disappear)
     rm -f /usr/bin/hhd-overlay
     rm -f /usr/bin/hhd-ui
 
-    echo "udeck: reverted. Reboot to return to standard Ubuntu behaviour."
+    echo "ubuntu-game-autologin: reverted. Reboot to return to standard Ubuntu behaviour."
     ;;
 esac
 
-# ---- Purge: remove everything including state and /opt/hhd --------------------
+# ---- Purge: remove state, HHD venv, AppImage, and desktop shortcut ------------
 if [ "$1" = "purge" ]; then
-    echo "udeck: purging all data..."
+    echo "ubuntu-game-autologin: purging all data..."
 
     TARGET_USER=""
     [ -f "$STATE_DIR/target_user" ] && TARGET_USER=$(cat "$STATE_DIR/target_user")
 
-    # Remove desktop shortcut
     if [ -n "$TARGET_USER" ]; then
         USER_HOME=$(eval echo ~"$TARGET_USER")
         rm -f "$USER_HOME/Desktop/Return to Gaming Mode.desktop"
     fi
 
-    # Remove HHD venv and AppImage
     rm -rf /opt/hhd
-
-    # Remove HHD global config dir
     rm -rf /etc/hhd
-
-    # Remove the Valve Steam APT repo and key (were shipped as package payloads)
-    rm -f /etc/apt/sources.list.d/steam.list
-    rm -f /etc/apt/keyrings/steam.gpg
-    apt-get update -q 2>/dev/null || true
-
-    # Remove state directory
     rm -rf "$STATE_DIR"
 
-    echo "udeck: purge complete."
+    echo "ubuntu-game-autologin: purge complete."
 fi
 
 exit 0

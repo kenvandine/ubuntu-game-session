@@ -1,6 +1,0 @@
-[Desktop Entry]
-Name=Ubuntu Game Session
-Comment=Steam Gamepad UI via Gamescope (a Steam OS-like gaming experience)
-Exec=/usr/bin/ubuntu-game-session
-Type=Application
-DesktopNames=ubuntu-game-session

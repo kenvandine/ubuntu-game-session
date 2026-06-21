@@ -1,3 +1,17 @@
+ubuntu-game-session (1.2-1) resolute; urgency=medium
+
+  * Split single package into two binary packages:
+    - ubuntu-game-session: core session (gamescope wrapper, desktop entry,
+      Steam snap install); suitable for any desktop or laptop.
+    - ubuntu-game-autologin: GDM autologin, HHD, boot reset service, polkit
+      rule, and desktop shortcut; depends on ubuntu-game-session; intended
+      for handheld gaming PCs (Legion Go, Steam Deck, etc.).
+  * Switch Steam installation from Valve APT repo to Steam snap.
+  * Rename source package from udeck to ubuntu-game-session.
+  * State directory renamed to /var/lib/ubuntu-game-autologin.
+
+ -- ubuntu-game-session contributors <ubuntu-game-session@localhost>  Sat, 21 Jun 2026 14:00:00 -0400
+
 udeck (1.2-1) resolute; urgency=medium
 
   * Rebrand gaming session from "Steam OS" to "Ubuntu Game Session".

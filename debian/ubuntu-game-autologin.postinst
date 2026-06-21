@@ -1,8 +1,10 @@
 #!/bin/bash
-# postinst - Runs as root after dpkg -i installs the udeck package
+# ubuntu-game-autologin.postinst - Runs as root after package installation.
+# Configures GDM autologin, polkit, sudoers, boot session reset service,
+# Handheld Daemon (HHD), and the "Return to Gaming Mode" desktop shortcut.
 set -e
 
-STATE_DIR=/var/lib/udeck
+STATE_DIR=/var/lib/ubuntu-game-autologin
 
 case "$1" in
 configure)
@@ -12,12 +14,12 @@ configure)
         TARGET_USER=$(id -un 1000 2>/dev/null)
     fi
     if [ -z "$TARGET_USER" ]; then
-        echo "ERROR: udeck: could not detect the primary user. Aborting." >&2
+        echo "ERROR: ubuntu-game-autologin: could not detect the primary user. Aborting." >&2
         exit 1
     fi
     USER_UID=$(id -u "$TARGET_USER")
     USER_HOME=$(eval echo ~"$TARGET_USER")
-    echo "udeck: configuring for user '$TARGET_USER' (uid ${USER_UID})"
+    echo "ubuntu-game-autologin: configuring for user '$TARGET_USER' (uid ${USER_UID})"
 
     # ---- Save originals for clean revert -----------------------------------------
     mkdir -p "$STATE_DIR"
@@ -28,26 +30,10 @@ configure)
         cp /etc/gdm3/custom.conf "$STATE_DIR/gdm3-custom.conf.orig"
     fi
 
-    # ---- Install Official Steam from the Valve APT repo -----------------------
-    # The repo config is shipped as a package payload in /etc/apt/sources.list.d/steam.list
-    # and the GPG key was added in preinst. apt-get handles it like any other package.
-    # However, because we are currently inside a `dpkg` installation lock, we cannot
-    # synchronously invoke `apt-get install`. We use a transient systemd task to wait and install.
-    echo "udeck: queueing asynchronous installation of steam-launcher and dependency verification..."
-    systemd-run --unit=udeck-steam-installer bash -c '
-        echo "Waiting for dpkg locks to release..."
-        while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/dpkg/lock >/dev/null 2>&1; do
-            sleep 2
-        done
-        echo "Locks released. Updating repositories to satisfy steamdeps and installing steam-launcher + dependencies..."
-        apt-get update -q
-        apt-get install -y steam-launcher steam-libs-amd64 steam-libs-i386
-    '
-
     # ---- GDM: automatic & timed login --------------------------------------------
     tee /etc/gdm3/custom.conf > /dev/null << GDMEOF
 # GDM configuration storage
-# Managed by udeck package -- remove package to revert
+# Managed by ubuntu-game-autologin package -- remove package to revert
 [daemon]
 AutomaticLoginEnable=True
 AutomaticLogin=${TARGET_USER}
@@ -149,8 +135,8 @@ UIEOF
     # ---- udev rules for controllers ---------------------------------------------
     mkdir -p /etc/udev/rules.d/
     UDEV_BASE=https://raw.githubusercontent.com/hhd-dev/hhd/master/usr/lib/udev/rules.d
-    curl -sL "$UDEV_BASE/83-hhd-user.rules"               -o /etc/udev/rules.d/83-hhd-user.rules
-    curl -sL "$UDEV_BASE/83-hhd.rules"                    -o /etc/udev/rules.d/83-hhd.rules
+    curl -sL "$UDEV_BASE/83-hhd-user.rules"                -o /etc/udev/rules.d/83-hhd-user.rules
+    curl -sL "$UDEV_BASE/83-hhd.rules"                     -o /etc/udev/rules.d/83-hhd.rules
     curl -sL "$UDEV_BASE/99-hhd-playstation-touchpad.rules" -o /etc/udev/rules.d/99-hhd-playstation-touchpad.rules
     udevadm control --reload-rules && udevadm trigger
 
@@ -162,7 +148,7 @@ UIEOF
     systemctl daemon-reload
     systemctl enable "hhd@${TARGET_USER}.service"
     systemctl restart "hhd@${TARGET_USER}.service" || \
-        echo "udeck: HHD could not start (normal in VM or without handheld device)"
+        echo "ubuntu-game-autologin: HHD could not start (normal in VM or without handheld device)"
 
     # ---- Set AccountsService session to ubuntu-game-session right now -----------
     busctl call org.freedesktop.Accounts \
@@ -197,7 +183,7 @@ DESKEOF
          gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true" \
         2>/dev/null || true
 
-    echo "udeck: installation complete. Please reboot to boot into Ubuntu Game Session."
+    echo "ubuntu-game-autologin: installation complete. Please reboot to boot into Ubuntu Game Session."
     ;;
 
 abort-upgrade|abort-remove|abort-deconfigure)

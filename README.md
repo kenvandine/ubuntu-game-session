@@ -11,12 +11,22 @@ Two things live here: a **ready-to-install `.deb` package** for end users, and *
 
 - A fresh installation of **Ubuntu 26.04** on your target device.
 
-### Installing via the `.deb` package (recommended)
+### Installing via the `.deb` packages (recommended)
 
 ```bash
-bash build.sh                                      # builds ../ubuntu-handheld_1.0-1_all.deb
-sudo apt install ../ubuntu-handheld_1.0-1_all.deb  # installs everything
+bash build.sh   # builds ../ubuntu-game-session_1.2-1_all.deb and ../ubuntu-game-autologin_1.2-1_all.deb
 ```
+
+**Desktop or laptop** — installs an optional "Ubuntu Game Session" at the GDM login screen:
+```bash
+sudo apt install ../ubuntu-game-session_1.2-1_all.deb
+```
+
+**Handheld gaming PC** (Legion Go, Steam Deck, etc.) — adds GDM autologin, HHD, and boot-into-gaming-mode:
+```bash
+sudo apt install ../ubuntu-game-autologin_1.2-1_all.deb
+```
+(`ubuntu-game-autologin` pulls in `ubuntu-game-session` automatically as a dependency.)
 
 Reboot. The system boots directly into the Steam Gamepad UI.
 
@@ -55,8 +65,10 @@ The system restarts the display manager and auto-logs you into Ubuntu Game Sessi
 ### How to fully uninstall
 
 ```bash
-sudo apt remove ubuntu-handheld       # reverts GDM config, removes services
-sudo apt purge ubuntu-handheld        # also removes HHD, /opt/hhd, desktop shortcut
+sudo apt remove ubuntu-game-autologin    # reverts GDM config, removes services and HHD symlinks
+sudo apt purge ubuntu-game-autologin     # also removes HHD venv, /opt/hhd, desktop shortcut
+sudo apt remove ubuntu-game-session      # removes session entry and Steam snap
+sudo apt purge ubuntu-game-session       # also removes Valve Steam APT key
 ```
 
 The `postrm` script restores the original `/etc/gdm3/custom.conf` from a backup taken at install time.
@@ -116,18 +128,18 @@ The `upstream/hhd-pkg/` directory contains a complete Debian source package for 
 │   ├── ubuntu-handheld-setup.sh    # standalone setup script
 │   └── test-in-vm.sh               # VM integration test
 ├── src/                            # static payloads shipped in the .deb
-│   ├── etc/apt/sources.list.d/
-│   │   └── steam.list
 │   ├── usr/bin/ubuntu-game-session-select
 │   ├── usr/bin/ubuntu-game-session
 │   └── usr/share/wayland-sessions/ubuntu-game-session.desktop
-├── debian/                         # MOTU-standard Debian package source files
-│   ├── control                     # package metadata + deps
+├── debian/                         # Debian package source files
+│   ├── control                     # source + two binary package metadata
 │   ├── rules                       # debhelper build rules
-│   ├── ubuntu-handheld.install     # maps src/ contents into the package
-│   ├── preinst                     # adds Valve APT repo + GPG key
-│   ├── postinst                    # configures GDM, polkit, HHD, services
-│   └── postrm                      # full revert on remove/purge
+│   ├── ubuntu-game-session.install # maps src/ contents into ubuntu-game-session
+│   ├── ubuntu-game-session.preinst # ensures snapd is running
+│   ├── ubuntu-game-session.postinst# installs Steam snap
+│   ├── ubuntu-game-session.postrm  # purge cleanup
+│   ├── ubuntu-game-autologin.postinst # configures GDM, polkit, HHD, services
+│   └── ubuntu-game-autologin.postrm   # full revert on remove/purge
 ├── build.sh                        # wrapper to run dpkg-buildpackage
 └── upstream/
     └── hhd-pkg/
@@ -136,25 +148,24 @@ The `upstream/hhd-pkg/` directory contains a complete Debian source package for 
 
 ### Key system files (installed)
 
-| Path | Purpose |
-|---|---|
-| `/usr/bin/ubuntu-game-session` | Gamescope + Steam launcher wrapper |
-| `/usr/bin/ubuntu-game-session-select` | Steam "Switch to Desktop" hook |
-| `/usr/share/wayland-sessions/ubuntu-game-session.desktop` | GDM session entry |
-| `/etc/systemd/system/ubuntu-game-session-autologin-reset.service` | Resets session to Ubuntu Game Session on every boot |
-| `/etc/systemd/system/hhd@.service` | HHD daemon (per-user template) |
-| `/etc/polkit-1/rules.d/50-gdm-restart.rules` | Allows GDM restart without password |
-| `/etc/apt/sources.list.d/steam.list` | Valve Steam APT repository |
-| `/opt/hhd/venv/` | Isolated Python venv for HHD |
-| `/opt/hhd/hhd-ui.AppImage` | HHD overlay UI |
-| `/var/lib/ubuntu-handheld/` | State directory (holds GDM config backup) |
+| Path | Package | Purpose |
+|---|---|---|
+| `/usr/bin/ubuntu-game-session` | ubuntu-game-session | Gamescope + Steam launcher wrapper |
+| `/usr/bin/ubuntu-game-session-select` | ubuntu-game-session | Steam "Switch to Desktop" hook |
+| `/usr/share/wayland-sessions/ubuntu-game-session.desktop` | ubuntu-game-session | GDM session entry |
+| `/etc/systemd/system/ubuntu-game-session-autologin-reset.service` | ubuntu-game-autologin | Resets session to Ubuntu Game Session on every boot |
+| `/etc/systemd/system/hhd@.service` | ubuntu-game-autologin | HHD daemon (per-user template) |
+| `/etc/polkit-1/rules.d/50-gdm-restart.rules` | ubuntu-game-autologin | Allows GDM restart without password |
+| `/opt/hhd/venv/` | ubuntu-game-autologin | Isolated Python venv for HHD |
+| `/opt/hhd/hhd-ui.AppImage` | ubuntu-game-autologin | HHD overlay UI |
+| `/var/lib/ubuntu-game-autologin/` | ubuntu-game-autologin | State directory (holds GDM config backup) |
 
 ### Notable dependencies
 
 | Package | Role |
 |---|---|
 | `gamescope` | Wayland micro-compositor for the Steam Gamepad UI |
-| `steam-launcher` | Official Valve Steam client (from Valve APT repo) |
+| `steam` (snap) | Official Valve Steam client (installed via snap) |
 | `hhd` | Handheld Daemon: TDP, controller remapping, fan curves |
 | `sxhkd` | Maps hardware volume keys to PipeWire inside Gamescope |
 | `acpi-call-dkms` | Exposes TDP limits via `/proc/acpi/call` |

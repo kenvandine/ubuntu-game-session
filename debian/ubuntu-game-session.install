@@ -1,4 +1,3 @@
 
 src/usr/bin/* usr/bin
 src/usr/share/wayland-sessions/* usr/share/wayland-sessions
-src/etc/apt/sources.list.d/* etc/apt/sources.list.d
