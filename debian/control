@@ -1,7 +1,7 @@
 Source: ubuntu-game-session
 Section: misc
 Priority: optional
-Maintainer: ubuntu-game-session contributors <ubuntu-game-session@localhost>
+Maintainer: Ken VanDine <ken.vandine@canonical.com>
 Build-Depends: debhelper-compat (= 13),
               build-essential
 Standards-Version: 4.6.2

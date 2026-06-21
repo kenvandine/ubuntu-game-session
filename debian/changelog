@@ -1,4 +1,4 @@
-ubuntu-game-session (1.3-1) resolute; urgency=medium
+ubuntu-game-session (0.3) resolute; urgency=medium
 
   * Rename ubuntu-game-autologin to ubuntu-game-handheld.
   * Drop HHD pip/venv/AppImage/udev installation from postinst — HHD is
@@ -12,9 +12,9 @@ ubuntu-game-session (1.3-1) resolute; urgency=medium
   * Revert Build-Depends to debhelper-compat + build-essential only.
   * Update standalone setup script to install hhd via apt (with pip fallback).
 
- -- ubuntu-game-session contributors <ubuntu-game-session@localhost>  Sat, 21 Jun 2026 14:19:00 -0400
+ -- Ken VanDine <ken.vandine@canonical.com>  Sat, 21 Jun 2026 14:19:00 -0400
 
-ubuntu-game-session (1.2-1) resolute; urgency=medium
+ubuntu-game-session (0.2) resolute; urgency=medium
 
   * Split single package into two binary packages:
     - ubuntu-game-session: core session (gamescope wrapper, desktop entry,
@@ -26,9 +26,9 @@ ubuntu-game-session (1.2-1) resolute; urgency=medium
   * Rename source package from udeck to ubuntu-game-session.
   * State directory renamed to /var/lib/ubuntu-game-autologin.
 
- -- ubuntu-game-session contributors <ubuntu-game-session@localhost>  Sat, 21 Jun 2026 14:00:00 -0400
+ -- Ken VanDine <ken.vandine@canonical.com>  Sat, 21 Jun 2026 14:00:00 -0400
 
-udeck (1.2-1) resolute; urgency=medium
+ubuntu-game-session (0.1) resolute; urgency=medium
 
   * Rebrand gaming session from "Steam OS" to "Ubuntu Game Session".
   * Rename binaries: steamos-session → ubuntu-game-session,
@@ -39,9 +39,10 @@ udeck (1.2-1) resolute; urgency=medium
   * Update XDG_SESSION_DESKTOP and XDG_CURRENT_DESKTOP env vars accordingly.
   * Update all references in postinst, postrm, scripts, and README.
 
- -- udeck contributors <udeck@localhost>  Sat, 21 Jun 2026 13:48:00 -0400
+ -- Ken VanDine <ken.vandine@canonical.com>  Sat, 21 Jun 2026 13:48:00 -0400
 
 
+udeck (1.2-1) resolute; urgency=medium
 
   * Port to Ubuntu 26.04 (Resolute Raccoon).
   * Update VM test target to 26.04.

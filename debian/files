@@ -1,2 +1,3 @@
-udeck_1.1-1_all.deb misc optional architecture=all
-udeck_1.1-1_amd64.buildinfo misc optional
+ubuntu-game-handheld_0.3_all.deb misc optional architecture=all
+ubuntu-game-session_0.3_all.deb misc optional architecture=all
+ubuntu-game-session_0.3_amd64.buildinfo misc optional
