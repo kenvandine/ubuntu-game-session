@@ -1,0 +1,135 @@
+#!/usr/bin/env python3
+"""
+ubuntu-game-launcher - Application launcher that auto-wraps games in gamescope.
+
+Reads all installed .desktop files, shows them in wofi, and launches any entry
+whose Categories field includes "Game" via `gamescope -f --` for frame timing,
+upscaling, and HDR benefits. All other apps launch normally.
+"""
+
+import os
+import sys
+import glob
+import shlex
+import subprocess
+from configparser import RawConfigParser
+
+GAMESCOPE_CMD = ["gamescope", "-f", "--"]
+
+# Standard XDG application directories, lowest → highest priority
+XDG_APP_DIRS = [
+    "/usr/share/applications",
+    "/usr/local/share/applications",
+    "/var/lib/flatpak/exports/share/applications",
+    os.path.expanduser("~/.local/share/flatpak/exports/share/applications"),
+    os.path.expanduser("~/.local/share/applications"),
+]
+
+
+def find_desktop_files():
+    """Return a dict of basename → full path, with user entries overriding system ones."""
+    seen = {}
+    for directory in XDG_APP_DIRS:
+        for path in glob.glob(os.path.join(directory, "*.desktop")):
+            seen[os.path.basename(path)] = path
+    return seen
+
+
+def parse_desktop_entry(path):
+    """Parse a .desktop file. Returns None if the entry should not be shown."""
+    cp = RawConfigParser(strict=False)
+    try:
+        cp.read(path, encoding="utf-8")
+    except Exception:
+        return None
+    if not cp.has_section("Desktop Entry"):
+        return None
+    entry = dict(cp["Desktop Entry"])
+    if entry.get("nodisplay", "false").lower() == "true":
+        return None
+    if entry.get("hidden", "false").lower() == "true":
+        return None
+    if entry.get("type", "").lower() != "application":
+        return None
+    if not entry.get("exec"):
+        return None
+    return entry
+
+
+def is_game(entry):
+    """Return True if the entry's Categories includes 'Game'."""
+    cats = entry.get("categories", "")
+    return any(c.strip().lower() == "game" for c in cats.split(";"))
+
+
+def clean_exec(exec_str):
+    """Parse Exec value and strip .desktop field codes (%f, %u, %F, %U, etc.)."""
+    try:
+        args = shlex.split(exec_str)
+    except ValueError:
+        args = exec_str.split()
+    return [a for a in args if not (len(a) == 2 and a[0] == "%")]
+
+
+def main():
+    desktop_files = find_desktop_files()
+
+    # Build the display list and a lookup map: display label → (entry, is_game)
+    lines = []
+    label_map = {}
+
+    for basename, path in sorted(desktop_files.items(), key=lambda kv: kv[0].lower()):
+        entry = parse_desktop_entry(path)
+        if not entry:
+            continue
+
+        name = entry.get("name", basename.removesuffix(".desktop"))
+        icon = entry.get("icon", "application-x-executable")
+        game = is_game(entry)
+        prefix = "🎮 " if game else "   "
+        label = f"{prefix}{name}"
+
+        # Deduplicate: append app-id when two entries share a display name
+        if label in label_map:
+            label = f"{label} ({basename.removesuffix('.desktop')})"
+
+        # wofi dmenu format: text\0icon\x1fIconName
+        lines.append(f"{label}\0icon\x1f{icon}")
+        label_map[label] = (entry, game)
+
+    result = subprocess.run(
+        [
+            "wofi",
+            "--show", "dmenu",
+            "--allow-images",
+            "--insensitive",
+            "--prompt", "Launch Application",
+        ],
+        input="\n".join(lines),
+        capture_output=True,
+        text=True,
+    )
+
+    # wofi exits non-zero when dismissed; treat that as a no-op
+    raw = result.stdout.strip()
+    if not raw:
+        sys.exit(0)
+
+    # wofi echoes back the exact input line; strip icon metadata if present
+    label = raw.split("\0")[0]
+    if label not in label_map:
+        sys.exit(1)
+
+    entry, game = label_map[label]
+    exec_args = clean_exec(entry["exec"])
+
+    if entry.get("terminal", "false").lower() == "true":
+        terminal = os.environ.get("TERMINAL", "xterm")
+        exec_args = [terminal, "-e"] + exec_args
+
+    cmd = GAMESCOPE_CMD + exec_args if game else exec_args
+    os.execvp(cmd[0], cmd)
+
+
+if __name__ == "__main__":
+    main()

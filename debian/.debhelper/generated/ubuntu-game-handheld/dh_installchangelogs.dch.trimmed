@@ -1,3 +1,16 @@
+ubuntu-game-session (0.5) resolute; urgency=medium
+
+  * ubuntu-game-desktop: add ubuntu-game-launcher script — a wofi-based
+    application launcher that automatically wraps any .desktop entry whose
+    Categories field includes "Game" in `gamescope -f --`, providing frame
+    timing, upscaling, and HDR for all installed games without editing any
+    .desktop files. Non-game apps launch normally. Games are marked with a
+    🎮 prefix in the launcher list.
+  * Wire ubuntu-game-launcher into labwc keybindings (Super, Super+Space,
+    right-click on desktop) and the waybar launcher button.
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Sat, 21 Jun 2026 16:02:00 -0400
+
 ubuntu-game-session (0.4) resolute; urgency=medium
 
   * ubuntu-game-session: only launch Steam in Big Picture / gamepadui mode

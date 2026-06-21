@@ -1,9 +1,9 @@
 Package: ubuntu-game-desktop
 Source: ubuntu-game-session
-Version: 0.4
+Version: 0.5
 Architecture: all
 Maintainer: Ken VanDine <ken.vandine@canonical.com>
-Installed-Size: 26
+Installed-Size: 30
 Depends: labwc, waybar, wofi, network-manager-gnome, fonts-noto
 Section: misc
 Priority: optional

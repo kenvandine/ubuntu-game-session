@@ -1,9 +1,10 @@
 b22d9d772792c210455db46f1d20c177  usr/bin/ubuntu-game-desktop
-458494d225cf5c0d58536279625ebe89  usr/share/doc/ubuntu-game-desktop/changelog.gz
+624e429b2fb346d46cbd6f5282dbc531  usr/bin/ubuntu-game-launcher
+4df7e4c1efd2f2e1f7ec976292b8dc60  usr/share/doc/ubuntu-game-desktop/changelog.gz
 cafbdc76ac97f05dfff0b72987b3ddf2  usr/share/doc/ubuntu-game-desktop/copyright
 88fe098e0240622c0336b40f038d9ebd  usr/share/ubuntu-game-desktop/labwc/autostart
-b46913138de855bfba9da2f4da3d826a  usr/share/ubuntu-game-desktop/labwc/rc.xml
-22383cd33ab5a01217272c16ba994ec9  usr/share/ubuntu-game-desktop/waybar/config
+9a6ccf03207f55a4a41343067dbe9a59  usr/share/ubuntu-game-desktop/labwc/rc.xml
+0ed27b9a7707e62c1945932232f9dedc  usr/share/ubuntu-game-desktop/waybar/config
 28ba15d88a661a3eeea371a966017919  usr/share/ubuntu-game-desktop/waybar/style.css
 9a5028dcf69657ea5c9bb9d4795736a1  usr/share/ubuntu-game-desktop/wofi/config
 8ead6f38d583370ad6b84e2c4326abfb  usr/share/ubuntu-game-desktop/wofi/style.css

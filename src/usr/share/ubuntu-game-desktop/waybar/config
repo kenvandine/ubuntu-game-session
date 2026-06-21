@@ -9,8 +9,8 @@
 
     "custom/launcher": {
         "format": "🎮",
-        "on-click": "wofi --show drun",
-        "tooltip": "Launch application (or right-click desktop / press Super)"
+        "on-click": "ubuntu-game-launcher",
+        "tooltip": "Launch application — games open in gamescope automatically"
     },
 
     "wlr/taskbar": {

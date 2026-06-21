@@ -1,4 +1,4 @@
-ubuntu-game-desktop_0.4_all.deb misc optional architecture=all
-ubuntu-game-handheld_0.4_all.deb misc optional architecture=all
-ubuntu-game-session_0.4_all.deb misc optional architecture=all
-ubuntu-game-session_0.4_amd64.buildinfo misc optional
+ubuntu-game-desktop_0.5_all.deb misc optional architecture=all
+ubuntu-game-handheld_0.5_all.deb misc optional architecture=all
+ubuntu-game-session_0.5_all.deb misc optional architecture=all
+ubuntu-game-session_0.5_amd64.buildinfo misc optional

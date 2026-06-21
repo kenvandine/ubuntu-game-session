@@ -17,12 +17,12 @@
     <!-- Open app launcher -->
     <keybind key="Super_L">
       <action name="Execute">
-        <command>wofi --show drun</command>
+        <command>ubuntu-game-launcher</command>
       </action>
     </keybind>
     <keybind key="Super-Space">
       <action name="Execute">
-        <command>wofi --show drun</command>
+        <command>ubuntu-game-launcher</command>
       </action>
     </keybind>
     <!-- Window management -->
@@ -48,7 +48,7 @@
       <context name="Root">
         <mousebind button="Right" action="Press">
           <action name="Execute">
-            <command>wofi --show drun</command>
+            <command>ubuntu-game-launcher</command>
           </action>
         </mousebind>
       </context>
